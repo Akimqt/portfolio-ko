@@ -1355,93 +1355,97 @@ function ProjectsPanel() {
         </div>
       </Reveal>
 
-      <motion.div layout className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <AnimatePresence mode="popLayout">
-          {projects.map((p, i) => (
-            <Reveal key={p.slug} delay={i * 0.06}>
-              <TiltCard maxTilt={p.placeholder ? 0 : 7} className="h-full">
-                <motion.button
-                  layout
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.92 }}
-                  whileHover={{ y: -6 }}
-                  whileTap={p.placeholder ? undefined : TAP_SCALE}
-                  transition={SPRING_LIFT}
-                  onClick={(e) => !p.placeholder && openModal(p, e.currentTarget)}
-                  className={`group relative flex h-full w-full flex-col text-left card-surface overflow-hidden transition ${
-                    p.placeholder
-                      ? "border-dashed border-[color:var(--slate-blue)]/30"
-                      : "hover:border-[color:var(--turquoise)]/50 hover:shadow-[0_20px_60px_-20px_rgba(68,127,152,0.5)]"
-                  }`}
-                >
-                  {p.image ? (
-                    <div className="p-3 pb-0">
-                      <motion.div
-                        layoutId={reduced ? undefined : `project-media-${p.slug}`}
-                        transition={MORPH_TRANSITION}
-                        style={{ opacity: open?.slug === p.slug ? 0 : 1 }}
-                        className="relative aspect-[16/9] overflow-hidden rounded-lg bg-[color:var(--surface-2)] ring-1 ring-white/10"
-                      >
-                        <img
-                          src={p.image}
-                          alt={p.title}
-                          width={640}
-                          height={360}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                        {/* Hover overlay CTA — slides up from the bottom */}
-                        <div className="absolute inset-0 flex translate-y-full items-center justify-center bg-[color:var(--background)]/55 [backdrop-filter:blur(10px)_saturate(160%)] transition-transform duration-300 group-hover:translate-y-0">
-                          <span className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--ice)]">
-                            View Details <ArrowRight size={14} />
-                          </span>
-                        </div>
-                      </motion.div>
-                    </div>
-                  ) : (
-                    <div className="p-3 pb-0">
-                      <div className="grid aspect-[16/9] place-items-center rounded-lg bg-[color:var(--surface-2)]/40 ring-1 ring-white/10">
-                        <Sparkles size={24} className="text-[color:var(--slate-blue)]/50" />
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex flex-1 flex-col p-4">
-                    <span className="inline-block w-fit rounded-full bg-[color:var(--turquoise)]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[color:var(--turquoise)]">
-                      {p.category}
-                    </span>
-                    <h3 className="mt-2 text-sm font-semibold text-[color:var(--ice)]">
-                      {p.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-[color:var(--platinum)]/75 line-clamp-2">
-                      {p.short}
-                    </p>
-
-                    <div className="mt-3 flex-1" />
-
-                    <span
-                      className={`inline-flex w-fit items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition ${
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={filter}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2, ease: EASE_SMOOTH }}
+        >
+          {projects.length === 0 ? (
+            <p className="py-12 text-center text-sm text-[color:var(--slate-blue)]/70">
+              No {filter.toLowerCase()} projects yet — check back soon.
+            </p>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {projects.map((p, i) => (
+                <Reveal key={p.slug} delay={i * 0.05}>
+                  <TiltCard maxTilt={p.placeholder ? 0 : 7} className="h-full">
+                    <motion.button
+                      whileHover={{ y: -6 }}
+                      whileTap={p.placeholder ? undefined : TAP_SCALE}
+                      transition={SPRING_LIFT}
+                      onClick={(e) => !p.placeholder && openModal(p, e.currentTarget)}
+                      className={`group relative flex h-full w-full flex-col text-left card-surface overflow-hidden transition ${
                         p.placeholder
-                          ? "bg-white/5 text-[color:var(--slate-blue)]/75"
-                          : "bg-[color:var(--surface-2)] text-[color:var(--ice)] group-hover:bg-[color:var(--turquoise)] group-hover:text-[color:var(--background)]"
+                          ? "border-dashed border-[color:var(--slate-blue)]/30"
+                          : "hover:border-[color:var(--turquoise)]/50 hover:shadow-[0_20px_60px_-20px_rgba(68,127,152,0.5)]"
                       }`}
                     >
-                      Details
-                      <ArrowRight size={11} className="transition group-hover:translate-x-1" />
-                    </span>
-                  </div>
-                </motion.button>
-              </TiltCard>
-            </Reveal>
-          ))}
-        </AnimatePresence>
-      </motion.div>
+                      {p.image ? (
+                        <div className="p-3 pb-0">
+                          <motion.div
+                            layoutId={reduced ? undefined : `project-media-${p.slug}`}
+                            transition={MORPH_TRANSITION}
+                            style={{ opacity: open?.slug === p.slug ? 0 : 1 }}
+                            className="relative aspect-[16/9] overflow-hidden rounded-lg bg-[color:var(--surface-2)] ring-1 ring-white/10"
+                          >
+                            <img
+                              src={p.image}
+                              alt={p.title}
+                              width={640}
+                              height={360}
+                              loading="lazy"
+                              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                            />
+                            {/* Hover overlay CTA — slides up from the bottom */}
+                            <div className="absolute inset-0 flex translate-y-full items-center justify-center bg-[color:var(--background)]/55 [backdrop-filter:blur(10px)_saturate(160%)] transition-transform duration-300 group-hover:translate-y-0">
+                              <span className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--ice)]">
+                                View Details <ArrowRight size={14} />
+                              </span>
+                            </div>
+                          </motion.div>
+                        </div>
+                      ) : (
+                        <div className="p-3 pb-0">
+                          <div className="grid aspect-[16/9] place-items-center rounded-lg bg-[color:var(--surface-2)]/40 ring-1 ring-white/10">
+                            <Sparkles size={24} className="text-[color:var(--slate-blue)]/50" />
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex flex-1 flex-col p-4">
+                        <span className="inline-block w-fit rounded-full bg-[color:var(--turquoise)]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[color:var(--turquoise)]">
+                          {p.category}
+                        </span>
+                        <h3 className="mt-2 text-sm font-semibold text-[color:var(--ice)]">
+                          {p.title}
+                        </h3>
+                        <p className="mt-1 text-xs text-[color:var(--platinum)]/75 line-clamp-2">
+                          {p.short}
+                        </p>
 
-      {projects.length === 0 && (
-        <p className="mt-6 text-center text-sm text-[color:var(--slate-blue)]/70">
-          No {filter.toLowerCase()} projects yet — check back soon.
-        </p>
-      )}
+                        <div className="mt-3 flex-1" />
+
+                        <span
+                          className={`inline-flex w-fit items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition ${
+                            p.placeholder
+                              ? "bg-white/5 text-[color:var(--slate-blue)]/75"
+                              : "bg-[color:var(--surface-2)] text-[color:var(--ice)] group-hover:bg-[color:var(--turquoise)] group-hover:text-[color:var(--background)]"
+                          }`}
+                        >
+                          Details
+                          <ArrowRight size={11} className="transition group-hover:translate-x-1" />
+                        </span>
+                      </div>
+                    </motion.button>
+                  </TiltCard>
+                </Reveal>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       <AnimatePresence>
         {open && (
