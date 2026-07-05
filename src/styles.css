@@ -1,0 +1,297 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-turquoise: var(--turquoise);
+  --color-slate-blue: var(--slate-blue);
+  --color-glacier: var(--glacier);
+  --color-ice: var(--ice);
+  --color-platinum: var(--platinum);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --font-display: "Playfair Display", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  --radius: 0.75rem;
+  /* Base palette */
+  --background: oklch(0.18 0.02 240); /* ~#0A1014 deep navy */
+  --foreground: oklch(0.93 0.012 230); /* platinum */
+  --surface: oklch(0.225 0.022 235); /* ~#101C24 cards */
+  --surface-2: oklch(0.27 0.025 235);
+
+  --turquoise: oklch(0.62 0.072 215); /* #447F98 */
+  --slate-blue: oklch(
+    0.76 0.04 245
+  ); /* #9DB4C9 — lightness raised from 0.70 for WCAG AA contrast at low-opacity text variants (hue/chroma unchanged) */
+  --glacier: oklch(0.88 0.03 225); /* #B9D8E1 */
+  --ice: oklch(0.94 0.018 225); /* #D6EBF3 */
+  --platinum: oklch(0.92 0.008 230); /* #D8E0E6 */
+
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --primary: var(--turquoise);
+  --primary-foreground: oklch(0.15 0.02 240);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-2);
+  --muted-foreground: oklch(0.7 0.04 245);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--foreground);
+  --destructive: oklch(0.65 0.18 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: var(--turquoise);
+
+  --gradient-headline: linear-gradient(135deg, #447f98 0%, #b9d8e1 60%, #d6ebf3 100%);
+  --gradient-primary: linear-gradient(135deg, #447f98, #5fa3bf);
+  --shadow-glow: 0 0 40px -10px color-mix(in oklab, #447f98 60%, transparent);
+  --shadow-card: 0 10px 40px -20px rgba(0, 0, 0, 0.6);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 20% 15%, rgba(68, 127, 152, 0.1), transparent 40%),
+      radial-gradient(circle at 80% 60%, rgba(130, 155, 181, 0.08), transparent 45%);
+    background-attachment: fixed;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  /* Visible keyboard focus indicator, site-wide. Mouse/touch users never see
+     this (focus-visible only triggers for keyboard nav), so it adds zero
+     visual noise while making the site fully keyboard-navigable. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--turquoise);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+}
+
+@utility gradient-text {
+  background-image: var(--gradient-headline);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility glow-turquoise {
+  box-shadow:
+    0 0 0 1px rgba(68, 127, 152, 0.4),
+    0 0 30px -5px rgba(68, 127, 152, 0.5);
+}
+
+@utility card-surface {
+  background-color: color-mix(in oklab, var(--surface) 72%, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  /* saturate() is the trick that separates real frosted glass from a plain
+     blurred box — it keeps whatever color is behind the panel rich instead
+     of washing it out to gray. */
+  backdrop-filter: blur(20px) saturate(165%);
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
+  box-shadow:
+    /* soft light catching the top inner edge of the pane */
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    /* gentle elevation so glass panels read as floating above the page */
+    0 8px 32px -14px rgba(0, 0, 0, 0.4);
+}
+
+@utility starfield {
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(214, 235, 243, 0.5), transparent 50%),
+    radial-gradient(1px 1px at 70% 80%, rgba(130, 155, 181, 0.45), transparent 50%),
+    radial-gradient(1.5px 1.5px at 40% 65%, rgba(214, 235, 243, 0.4), transparent 50%),
+    radial-gradient(1px 1px at 85% 20%, rgba(185, 216, 225, 0.5), transparent 50%),
+    radial-gradient(1px 1px at 10% 80%, rgba(214, 235, 243, 0.4), transparent 50%),
+    radial-gradient(1px 1px at 55% 15%, rgba(130, 155, 181, 0.4), transparent 50%),
+    radial-gradient(1.5px 1.5px at 90% 50%, rgba(214, 235, 243, 0.35), transparent 50%),
+    radial-gradient(1px 1px at 30% 90%, rgba(185, 216, 225, 0.45), transparent 50%);
+  background-size: 800px 800px;
+}
+
+/* Box-grid lines for the hero background — subtle circuit-board grid motif. */
+@utility circuit-trace {
+  background-image:
+    linear-gradient(90deg, rgba(68, 127, 152, 0.16) 1px, transparent 1px),
+    linear-gradient(rgba(68, 127, 152, 0.16) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+}
+
+@keyframes float-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -20px) scale(1.1);
+  }
+}
+@keyframes bounce-down {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 1;
+  }
+}
+@keyframes draw-line {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes ping-slow {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+.animate-float-blob {
+  animation: float-blob 14s ease-in-out infinite;
+}
+.animate-bounce-down {
+  animation: bounce-down 1.8s ease-in-out infinite;
+}
+.animate-ping-slow {
+  animation: ping-slow 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Orbit: a wrapper rotates a set of satellite icons around a fixed center,
+   while each satellite counter-rotates at the same speed so its glyph stays
+   upright. Used by the welcome-intro console card. */
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes orbit-spin-reverse {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+.animate-orbit {
+  animation: orbit-spin 7s linear infinite;
+}
+.animate-orbit-counter {
+  animation: orbit-spin-reverse 7s linear infinite;
+}
+
+/* Infinite tech marquee */
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.animate-marquee-left {
+  animation: marquee-left 32s linear infinite;
+}
+.animate-marquee-right {
+  animation: marquee-right 36s linear infinite;
+}
+.marquee-pause:hover .animate-marquee-left,
+.marquee-pause:hover .animate-marquee-right {
+  animation-play-state: paused;
+}
+
+/* Skill bar fill */
+@keyframes skill-fill {
+  from {
+    width: 0%;
+  }
+}
+
+/* Availability pulse */
+@keyframes availability-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.5);
+  }
+}
+.animate-availability {
+  animation: availability-pulse 1.8s ease-in-out infinite;
+}
