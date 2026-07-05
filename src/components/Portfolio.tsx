@@ -1205,8 +1205,17 @@ function PortfolioShowcase() {
   );
 }
 
+const PROJECT_FILTERS: { id: "All" | "Software" | "Hardware"; icon: React.ReactNode }[] = [
+  { id: "All", icon: <Layers size={13} /> },
+  { id: "Software", icon: <Code2 size={13} /> },
+  { id: "Hardware", icon: <Cpu size={13} /> },
+];
+
 function ProjectsPanel() {
-  const { projects } = useProjects();
+  const { projects: allProjects } = useProjects();
+  const [filter, setFilter] = useState<"All" | "Software" | "Hardware">("All");
+  const projects =
+    filter === "All" ? allProjects : allProjects.filter((p) => p.category === filter);
   const reduced = usePrefersReducedMotion();
   const [open, setOpen] = useState<Project | null>(null);
   const [activeImage, setActiveImage] = useState(0);
@@ -1317,79 +1326,122 @@ function ProjectsPanel() {
 
   return (
     <div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {projects.map((p, i) => (
-          <Reveal key={p.slug} delay={i * 0.06}>
-            <TiltCard maxTilt={p.placeholder ? 0 : 7} className="h-full">
-              <motion.button
-                whileHover={{ y: -6 }}
-                whileTap={p.placeholder ? undefined : TAP_SCALE}
-                transition={SPRING_LIFT}
-                onClick={(e) => !p.placeholder && openModal(p, e.currentTarget)}
-                className={`group relative flex h-full w-full flex-col text-left card-surface overflow-hidden transition ${
-                  p.placeholder
-                    ? "border-dashed border-[color:var(--slate-blue)]/30"
-                    : "hover:border-[color:var(--turquoise)]/50 hover:shadow-[0_20px_60px_-20px_rgba(68,127,152,0.5)]"
-                }`}
-              >
-                {p.image ? (
-                  <div className="p-3 pb-0">
-                    <motion.div
-                      layoutId={reduced ? undefined : `project-media-${p.slug}`}
-                      transition={MORPH_TRANSITION}
-                      style={{ opacity: open?.slug === p.slug ? 0 : 1 }}
-                      className="relative aspect-[16/9] overflow-hidden rounded-lg bg-[color:var(--surface-2)] ring-1 ring-white/10"
-                    >
-                      <img
-                        src={p.image}
-                        alt={p.title}
-                        width={640}
-                        height={360}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                      />
-                      {/* Hover overlay CTA — slides up from the bottom */}
-                      <div className="absolute inset-0 flex translate-y-full items-center justify-center bg-[color:var(--background)]/55 [backdrop-filter:blur(10px)_saturate(160%)] transition-transform duration-300 group-hover:translate-y-0">
-                        <span className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--ice)]">
-                          View Details <ArrowRight size={14} />
-                        </span>
-                      </div>
-                    </motion.div>
-                  </div>
-                ) : (
-                  <div className="p-3 pb-0">
-                    <div className="grid aspect-[16/9] place-items-center rounded-lg bg-[color:var(--surface-2)]/40 ring-1 ring-white/10">
-                      <Sparkles size={24} className="text-[color:var(--slate-blue)]/50" />
+      <Reveal>
+        <div className="mb-8 flex flex-wrap justify-center gap-2">
+          {PROJECT_FILTERS.map((f) => (
+            <motion.button
+              key={f.id}
+              whileTap={TAP_SCALE}
+              onClick={() => setFilter(f.id)}
+              className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm transition-colors ${
+                filter === f.id
+                  ? "text-[color:var(--background)]"
+                  : "border border-white/10 text-[color:var(--slate-blue)] hover:text-[color:var(--ice)] hover:border-[color:var(--turquoise)]/40"
+              }`}
+            >
+              {filter === f.id && (
+                <motion.span
+                  layoutId="project-filter-pill"
+                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  className="absolute inset-0 rounded-full bg-[color:var(--turquoise)] shadow-[0_0_24px_-6px_rgba(68,127,152,0.8)]"
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-1.5">
+                {f.icon}
+                {f.id}
+              </span>
+            </motion.button>
+          ))}
+        </div>
+      </Reveal>
+
+      <motion.div layout className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <AnimatePresence mode="popLayout">
+          {projects.map((p, i) => (
+            <Reveal key={p.slug} delay={i * 0.06}>
+              <TiltCard maxTilt={p.placeholder ? 0 : 7} className="h-full">
+                <motion.button
+                  layout
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92 }}
+                  whileHover={{ y: -6 }}
+                  whileTap={p.placeholder ? undefined : TAP_SCALE}
+                  transition={SPRING_LIFT}
+                  onClick={(e) => !p.placeholder && openModal(p, e.currentTarget)}
+                  className={`group relative flex h-full w-full flex-col text-left card-surface overflow-hidden transition ${
+                    p.placeholder
+                      ? "border-dashed border-[color:var(--slate-blue)]/30"
+                      : "hover:border-[color:var(--turquoise)]/50 hover:shadow-[0_20px_60px_-20px_rgba(68,127,152,0.5)]"
+                  }`}
+                >
+                  {p.image ? (
+                    <div className="p-3 pb-0">
+                      <motion.div
+                        layoutId={reduced ? undefined : `project-media-${p.slug}`}
+                        transition={MORPH_TRANSITION}
+                        style={{ opacity: open?.slug === p.slug ? 0 : 1 }}
+                        className="relative aspect-[16/9] overflow-hidden rounded-lg bg-[color:var(--surface-2)] ring-1 ring-white/10"
+                      >
+                        <img
+                          src={p.image}
+                          alt={p.title}
+                          width={640}
+                          height={360}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        />
+                        {/* Hover overlay CTA — slides up from the bottom */}
+                        <div className="absolute inset-0 flex translate-y-full items-center justify-center bg-[color:var(--background)]/55 [backdrop-filter:blur(10px)_saturate(160%)] transition-transform duration-300 group-hover:translate-y-0">
+                          <span className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--ice)]">
+                            View Details <ArrowRight size={14} />
+                          </span>
+                        </div>
+                      </motion.div>
                     </div>
+                  ) : (
+                    <div className="p-3 pb-0">
+                      <div className="grid aspect-[16/9] place-items-center rounded-lg bg-[color:var(--surface-2)]/40 ring-1 ring-white/10">
+                        <Sparkles size={24} className="text-[color:var(--slate-blue)]/50" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex flex-1 flex-col p-4">
+                    <span className="inline-block w-fit rounded-full bg-[color:var(--turquoise)]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[color:var(--turquoise)]">
+                      {p.category}
+                    </span>
+                    <h3 className="mt-2 text-sm font-semibold text-[color:var(--ice)]">
+                      {p.title}
+                    </h3>
+                    <p className="mt-1 text-xs text-[color:var(--platinum)]/75 line-clamp-2">
+                      {p.short}
+                    </p>
+
+                    <div className="mt-3 flex-1" />
+
+                    <span
+                      className={`inline-flex w-fit items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition ${
+                        p.placeholder
+                          ? "bg-white/5 text-[color:var(--slate-blue)]/75"
+                          : "bg-[color:var(--surface-2)] text-[color:var(--ice)] group-hover:bg-[color:var(--turquoise)] group-hover:text-[color:var(--background)]"
+                      }`}
+                    >
+                      Details
+                      <ArrowRight size={11} className="transition group-hover:translate-x-1" />
+                    </span>
                   </div>
-                )}
-                <div className="flex flex-1 flex-col p-4">
-                  <span className="inline-block w-fit rounded-full bg-[color:var(--turquoise)]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[color:var(--turquoise)]">
-                    {p.category}
-                  </span>
-                  <h3 className="mt-2 text-sm font-semibold text-[color:var(--ice)]">{p.title}</h3>
-                  <p className="mt-1 text-xs text-[color:var(--platinum)]/75 line-clamp-2">
-                    {p.short}
-                  </p>
+                </motion.button>
+              </TiltCard>
+            </Reveal>
+          ))}
+        </AnimatePresence>
+      </motion.div>
 
-                  <div className="mt-3 flex-1" />
-
-                  <span
-                    className={`inline-flex w-fit items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition ${
-                      p.placeholder
-                        ? "bg-white/5 text-[color:var(--slate-blue)]/75"
-                        : "bg-[color:var(--surface-2)] text-[color:var(--ice)] group-hover:bg-[color:var(--turquoise)] group-hover:text-[color:var(--background)]"
-                    }`}
-                  >
-                    Details
-                    <ArrowRight size={11} className="transition group-hover:translate-x-1" />
-                  </span>
-                </div>
-              </motion.button>
-            </TiltCard>
-          </Reveal>
-        ))}
-      </div>
+      {projects.length === 0 && (
+        <p className="mt-6 text-center text-sm text-[color:var(--slate-blue)]/70">
+          No {filter.toLowerCase()} projects yet — check back soon.
+        </p>
+      )}
 
       <AnimatePresence>
         {open && (
