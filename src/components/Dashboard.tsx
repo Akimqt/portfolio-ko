@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Award,
   FolderGit2,
+  GraduationCap,
   Layers,
   LayoutDashboard,
   LogOut,
@@ -20,6 +21,7 @@ import DashboardHome from "@/components/admin/DashboardHome";
 import ProjectsManager from "@/components/admin/ProjectsManager";
 import TechStackManager from "@/components/admin/TechStackManager";
 import CertificatesManager from "@/components/admin/CertificatesManager";
+import ExperienceManager from "@/components/admin/ExperienceManager";
 import CommentsManager from "@/components/admin/CommentsManager";
 import SettingsManager from "@/components/admin/SettingsManager";
 import type { AdminSection } from "@/components/admin/types";
@@ -29,6 +31,7 @@ const NAV_ITEMS: { section: AdminSection; label: string; icon: typeof LayoutDash
   { section: "projects", label: "Projects", icon: FolderGit2 },
   { section: "stack", label: "Tech Stack", icon: Layers },
   { section: "certificates", label: "Certificates", icon: Award },
+  { section: "experience", label: "Experience", icon: GraduationCap },
   { section: "comments", label: "Comments", icon: MessageSquare },
   { section: "settings", label: "Profile Settings", icon: UserCog },
 ];
@@ -186,6 +189,7 @@ function AdminPanel() {
               {section === "projects" && <ProjectsManager />}
               {section === "stack" && <TechStackManager />}
               {section === "certificates" && <CertificatesManager />}
+              {section === "experience" && <ExperienceManager />}
               {section === "comments" && <CommentsManager />}
               {section === "settings" && <SettingsManager />}
             </motion.div>

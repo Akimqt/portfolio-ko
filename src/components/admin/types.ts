@@ -3,5 +3,6 @@ export type AdminSection =
   | "projects"
   | "stack"
   | "certificates"
+  | "experience"
   | "comments"
   | "settings";

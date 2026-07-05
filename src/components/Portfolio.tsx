@@ -25,8 +25,6 @@ import {
   Users,
   Sparkles,
   Rocket,
-  GraduationCap,
-  Briefcase,
   Award,
   ExternalLink,
   CircleCheckBig,
@@ -48,6 +46,8 @@ import { useProjects, type Project } from "@/lib/projects";
 import { useTechStack, type TechStackItem } from "@/lib/tech-stack";
 import { getTechIcon } from "@/lib/tech-icons";
 import { useCertificates } from "@/lib/certificates";
+import { useExperience } from "@/lib/experience";
+import { getExperienceIcon } from "@/lib/experience-icons";
 import { useComments, formatRelativeTime, type Comment } from "@/lib/comments";
 import { useSiteSettings } from "@/lib/settings";
 
@@ -1685,44 +1685,12 @@ function ProjectsPanel() {
 
 /* ---------- Experience ---------- */
 
-type TimelineItem = {
-  icon: React.ReactNode;
-  tag: string;
-  title: string;
-  sub: string;
-  body: string;
-  placeholder?: boolean;
-};
-
-const TIMELINE: TimelineItem[] = [
-  {
-    icon: <GraduationCap size={18} />,
-    tag: "2024 – 2028",
-    title: "BS Computer Engineering",
-    sub: "Pamantasan ng Lungsod ng San Pablo — San Pablo City, Laguna",
-    body: "Relevant Coursework: Programming Logic and Design, Data Structures and Algorithms, Fundamentals of Electronics Circuits, Database Systems, Computer Networks.",
-  },
-  {
-    icon: <Users size={18} />,
-    tag: "2025 – Present",
-    title: "Technical Committee Head",
-    sub: "Computer Engineering Student Society",
-    body: "Leads a 5-member Technical Committee, overseeing technical initiatives, events, and internal tools. Plans and organizes technical workshops, seminars, and competitions. Manages the organization's technical infrastructure (website and social media) and coordinates the team to delegate tasks and ensure timely delivery.",
-  },
-  {
-    icon: <Briefcase size={18} />,
-    tag: "2027 onward",
-    title: "Open to OJT / Internship Opportunities",
-    sub: "Full-Stack Development · Web & Mobile · IoT/Embedded",
-    body: "Actively seeking on-the-job training and internship opportunities in full-stack development, with IoT and embedded systems as an added strength.",
-    placeholder: true,
-  },
-];
-
 function Experience() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start 0.7", "end 0.3"] });
   const lineScale = useSpring(scrollYProgress, { stiffness: 80, damping: 20 });
+  const { experience } = useExperience();
+  const timeline = [...experience].sort((a, b) => a.order - b.order);
 
   return (
     <section
@@ -1744,12 +1712,13 @@ function Experience() {
           />
 
           <div className="space-y-12">
-            {TIMELINE.map((it, i) => {
+            {timeline.map((it, i) => {
               // "Present" / ongoing items get a pulsing ring to draw the eye —
               // the rest get a plain static node.
               const isOngoing = it.tag.toLowerCase().includes("present") || it.placeholder;
+              const Icon = getExperienceIcon(it.iconKey).icon;
               return (
-                <Reveal key={it.title} delay={0.05}>
+                <Reveal key={it.id} delay={0.05}>
                   <div
                     className={`relative grid md:grid-cols-2 gap-6 items-center ${i % 2 === 1 ? "md:[direction:rtl]" : ""}`}
                   >
@@ -1783,12 +1752,18 @@ function Experience() {
                       {isOngoing && (
                         <span className="absolute inset-0 rounded-full border border-[color:var(--turquoise)] animate-ping-slow" />
                       )}
-                      {it.icon}
+                      <Icon size={18} />
                     </motion.div>
                   </div>
                 </Reveal>
               );
             })}
+
+            {timeline.length === 0 && (
+              <p className="text-center text-sm text-[color:var(--slate-blue)]">
+                No experience entries yet — add some from the admin panel.
+              </p>
+            )}
           </div>
         </div>
       </div>

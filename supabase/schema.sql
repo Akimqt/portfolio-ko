@@ -92,6 +92,31 @@ create policy "certificates_admin_write" on certificates for all
   with check (auth.role() = 'authenticated');
 
 -- ---------------------------------------------------------------------------
+-- experience — the Experience & Education timeline
+-- ---------------------------------------------------------------------------
+create table if not exists experience (
+  "id" uuid primary key default gen_random_uuid(),
+  "iconKey" text not null default 'briefcase',
+  "tag" text not null,
+  "title" text not null,
+  "sub" text not null,
+  "body" text not null,
+  "order" integer not null default 0,
+  "placeholder" boolean not null default false,
+  "createdAt" timestamptz not null default now()
+);
+
+alter table experience enable row level security;
+
+drop policy if exists "experience_public_read" on experience;
+create policy "experience_public_read" on experience for select using (true);
+
+drop policy if exists "experience_admin_write" on experience;
+create policy "experience_admin_write" on experience for all
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+
+-- ---------------------------------------------------------------------------
 -- comments — the one table where INSERT stays open to the public (anyone can
 -- leave a comment); only pinning/deleting requires an authenticated admin.
 -- ---------------------------------------------------------------------------
@@ -248,6 +273,37 @@ values
   ('Master Agile Project Success — PRINCE2® Agile® Foundation & Practitioner Training', 'KOENIG Webinar (via Zoom)', 'Jan 2025', '2025-01-15T00:00:00.000Z'),
   ('VMware NSX — Network Virtualization & Security in Hybrid Clouds', 'KOENIG Webinar (via Zoom)', 'Jan 2025', '2025-01-15T00:00:00.000Z'),
   ('Python''s Role in AI-Driven Automation', 'KOENIG Webinar (via Zoom)', 'Jan 2025', '2025-01-15T00:00:00.000Z')
+on conflict do nothing;
+
+insert into experience ("iconKey", "tag", "title", "sub", "body", "order", "placeholder")
+values
+  (
+    'graduation-cap',
+    '2024 – 2028',
+    'BS Computer Engineering',
+    'Pamantasan ng Lungsod ng San Pablo — San Pablo City, Laguna',
+    'Relevant Coursework: Programming Logic and Design, Data Structures and Algorithms, Fundamentals of Electronics Circuits, Database Systems, Computer Networks.',
+    1,
+    false
+  ),
+  (
+    'users',
+    '2025 – Present',
+    'Technical Committee Head',
+    'Computer Engineering Student Society',
+    'Leads a 5-member Technical Committee, overseeing technical initiatives, events, and internal tools. Plans and organizes technical workshops, seminars, and competitions. Manages the organization''s technical infrastructure (website and social media) and coordinates the team to delegate tasks and ensure timely delivery.',
+    2,
+    false
+  ),
+  (
+    'briefcase',
+    '2027 onward',
+    'Open to OJT / Internship Opportunities',
+    'Full-Stack Development · Web & Mobile · IoT/Embedded',
+    'Actively seeking on-the-job training and internship opportunities in full-stack development, with IoT and embedded systems as an added strength.',
+    3,
+    true
+  )
 on conflict do nothing;
 
 insert into site_settings ("id", "fullName", "role", "location", "availabilityText", "aboutParagraphs", "resumeUrl", "email", "phone", "social", "seo")
