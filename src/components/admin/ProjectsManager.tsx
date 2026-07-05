@@ -1,6 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Github, Images, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  Code2,
+  Cpu,
+  ExternalLink,
+  Github,
+  Images,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useProjects, type Project } from "@/lib/projects";
 import { slugify } from "@/lib/admin-store";
@@ -33,9 +43,14 @@ type ProjectForm = {
   features: string[];
 };
 
+const PROJECT_CATEGORIES = [
+  { value: "Software", icon: Code2 },
+  { value: "Hardware", icon: Cpu },
+] as const;
+
 const EMPTY_FORM: ProjectForm = {
   title: "",
-  category: "",
+  category: "Software",
   slug: "",
   meta: "",
   short: "",
@@ -47,6 +62,13 @@ const EMPTY_FORM: ProjectForm = {
   tags: [],
   features: [],
 };
+
+/** Keeps the cover image as gallery[0] without duplicating it, so the lightbox
+ *  on the public site always opens on the same image shown on the card. */
+function withCoverFirst(image: string, gallery: string[]): string[] {
+  if (!image) return gallery;
+  return [image, ...gallery.filter((g) => g !== image)];
+}
 
 function toForm(p: Project): ProjectForm {
   return {
@@ -76,6 +98,19 @@ export default function ProjectsManager() {
   const [formError, setFormError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Keep the cover image mirrored as the first gallery slot while the modal
+  // is open, so the gallery preview always matches what actually saves.
+  useEffect(() => {
+    if (!modalOpen || !form.image) return;
+    setForm((f) => {
+      const synced = withCoverFirst(f.image, f.gallery);
+      if (synced.length === f.gallery.length && synced.every((g, i) => g === f.gallery[i])) {
+        return f;
+      }
+      return { ...f, gallery: synced };
+    });
+  }, [modalOpen, form.image]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -109,6 +144,7 @@ export default function ProjectsManager() {
     }
 
     setSubmitting(true);
+    const gallery = form.image ? withCoverFirst(form.image, form.gallery) : form.gallery;
     try {
       if (editingSlug) {
         const desiredSlug = form.slug.trim() ? slugify(form.slug) : editingSlug;
@@ -126,7 +162,7 @@ export default function ProjectsManager() {
           short: form.short,
           long: form.long,
           image: form.image || undefined,
-          gallery: form.gallery.length > 0 ? form.gallery : undefined,
+          gallery: gallery.length > 0 ? gallery : undefined,
           link: form.link || undefined,
           github: form.github || undefined,
           tags: form.tags,
@@ -142,7 +178,7 @@ export default function ProjectsManager() {
           short: form.short,
           long: form.long,
           image: form.image || undefined,
-          gallery: form.gallery.length > 0 ? form.gallery : undefined,
+          gallery: gallery.length > 0 ? gallery : undefined,
           link: form.link || undefined,
           github: form.github || undefined,
           tags: form.tags,
@@ -317,13 +353,22 @@ export default function ProjectsManager() {
         </Field>
 
         <Field label="Category" required>
-          <input
-            type="text"
-            value={form.category}
-            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-            className={fieldInputClass}
-            placeholder="e.g. Web System, IoT System, Hardware"
-          />
+          <div className="mt-1.5 grid grid-cols-2 gap-2">
+            {PROJECT_CATEGORIES.map(({ value, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, category: value }))}
+                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+                  form.category === value
+                    ? "border-[color:var(--turquoise)] bg-[color:var(--turquoise)]/15 text-[color:var(--turquoise)]"
+                    : "border-white/10 text-[color:var(--slate-blue)] hover:border-white/20 hover:text-[color:var(--ice)]"
+                }`}
+              >
+                <Icon size={15} /> {value}
+              </button>
+            ))}
+          </div>
         </Field>
 
         <Field
