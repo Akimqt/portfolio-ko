@@ -155,6 +155,9 @@ export function Modal({
           exit={{ opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
           onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-modal-title"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 16 }}
@@ -173,7 +176,10 @@ export function Modal({
             className="card-surface flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden !bg-[color:var(--background)]/95"
           >
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-              <h3 className="font-display text-xl font-semibold text-[color:var(--ice)]">
+              <h3
+                id="admin-modal-title"
+                className="font-display text-xl font-semibold text-[color:var(--ice)]"
+              >
                 {title}
               </h3>
               <button
@@ -258,6 +264,10 @@ export function ConfirmDialog({
           exit={{ opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
           onMouseDown={(e) => e.target === e.currentTarget && onCancel()}
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="admin-confirm-title"
+          aria-describedby="admin-confirm-description"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 16 }}
@@ -273,10 +283,15 @@ export function ConfirmDialog({
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[color:var(--destructive)]/15 text-[color:var(--destructive)]">
               <AlertTriangle size={22} />
             </div>
-            <h3 className="mt-4 font-display text-lg font-semibold text-[color:var(--ice)]">
+            <h3
+              id="admin-confirm-title"
+              className="mt-4 font-display text-lg font-semibold text-[color:var(--ice)]"
+            >
               {title}
             </h3>
-            <p className="mt-2 text-sm text-[color:var(--platinum)]/75">{description}</p>
+            <p id="admin-confirm-description" className="mt-2 text-sm text-[color:var(--platinum)]/75">
+              {description}
+            </p>
             <div className="mt-6 flex justify-center gap-3">
               <GhostButton onClick={onCancel}>Cancel</GhostButton>
               <motion.button
@@ -597,7 +612,7 @@ export function GalleryField({
                 className="group relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-[color:var(--surface-2)]/60"
               >
                 <img src={src} alt={`Gallery ${idx + 1}`} className="h-full w-full object-cover" />
-                <div className="absolute inset-0 flex flex-col justify-between bg-black/0 p-1.5 opacity-0 transition group-hover:bg-black/50 group-hover:opacity-100">
+                <div className="absolute inset-0 flex flex-col justify-between bg-black/0 p-1.5 opacity-100 transition sm:opacity-0 sm:group-hover:bg-black/50 sm:group-hover:opacity-100">
                   <div className="flex justify-end gap-1">
                     {onSetCover && (
                       <button

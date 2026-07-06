@@ -58,6 +58,7 @@ import {
   DURATION,
   STAGGER,
   usePrefersReducedMotion,
+  useCanHover,
 } from "@/lib/motion-tokens";
 
 /* ---------- Dynamic stats: program start date ---------- */
@@ -416,7 +417,7 @@ function Navbar() {
         />
       </div>
       <header
-        className={`fixed inset-x-0 top-0 z-40 backdrop-blur-md transition-all duration-500 ${
+        className={`fixed inset-x-0 top-0 z-40 backdrop-blur-md transition-[background-color,backdrop-filter,border-color,box-shadow] duration-300 ${
           scrolled
             ? "backdrop-blur-2xl [backdrop-filter:blur(28px)_saturate(160%)] bg-[color:var(--background)]/75 border-b border-[color:var(--turquoise)]/10 shadow-[0_1px_0_0_rgba(68,127,152,0.15),inset_0_-1px_0_rgba(68,127,152,0.15)]"
             : "bg-[color:var(--background)]/10"
@@ -467,7 +468,9 @@ function Navbar() {
           <motion.button
             whileTap={TAP_SCALE}
             onClick={() => setOpen((o) => !o)}
-            className="lg:hidden p-2 text-[color:var(--platinum)]"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            className="lg:hidden grid h-11 w-11 place-items-center text-[color:var(--platinum)]"
           >
             <AnimatePresence mode="wait">
               {open ? (
@@ -585,6 +588,7 @@ function CyclingWord({ words, className = "" }: { words: string[]; className?: s
 
 function Hero() {
   const reduced = usePrefersReducedMotion();
+  const canHover = useCanHover();
   const { settings } = useSiteSettings();
 
   return (
@@ -740,7 +744,9 @@ function Hero() {
               initial={reduced ? false : { opacity: 0, y: 14, scale: 0.92 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               whileHover={
-                reduced ? undefined : { y: -3, borderColor: "#447f98", transition: SPRING_LIFT }
+                reduced || !canHover
+                  ? undefined
+                  : { y: -3, borderColor: "#447f98", transition: SPRING_LIFT }
               }
               transition={reduced ? {} : { delay: 1.5 + i * 0.1, duration: 0.5, ease: EASE_SMOOTH }}
               className="card-surface px-5 py-3"
@@ -826,6 +832,7 @@ function SkillBars() {
 
 function About() {
   const reduced = usePrefersReducedMotion();
+  const canHover = useCanHover();
   const { settings } = useSiteSettings();
   const badges = [
     "Full-Stack Developer",
@@ -959,15 +966,16 @@ function About() {
             <Reveal key={v.t} delay={i * 0.08}>
               <TiltCard maxTilt={5} className="h-full">
                 <motion.div
-                  whileHover={{
-                    y: -5,
-                    boxShadow: "0 24px 50px -24px rgba(68,127,152,0.55)",
-                  }}
+                  whileHover={
+                    canHover
+                      ? { y: -5, boxShadow: "0 24px 50px -24px rgba(68,127,152,0.55)" }
+                      : undefined
+                  }
                   transition={SPRING_LIFT}
                   className="card-surface p-6 h-full transition-colors hover:border-[color:var(--turquoise)]/40"
                 >
                   <motion.div
-                    whileHover={{ scale: 1.12, rotate: -4 }}
+                    whileHover={canHover ? { scale: 1.12, rotate: -4 } : undefined}
                     transition={SPRING_LIFT}
                     className="grid h-10 w-10 place-items-center rounded-lg bg-[color:var(--turquoise)]/15 text-[color:var(--turquoise)]"
                   >
@@ -997,6 +1005,7 @@ function About() {
 /* ---------- Why Work With Me ---------- */
 
 function WhyMe() {
+  const canHover = useCanHover();
   const items = [
     {
       i: <Cpu size={22} />,
@@ -1037,7 +1046,7 @@ function WhyMe() {
             <Reveal key={it.t} delay={i * 0.08}>
               <TiltCard maxTilt={6} className="h-full">
                 <motion.div
-                  whileHover={{ y: -6, scale: 1.012 }}
+                  whileHover={canHover ? { y: -6, scale: 1.012 } : undefined}
                   transition={SPRING_LIFT}
                   className="group relative card-surface p-8 h-full overflow-hidden transition-colors hover:border-[color:var(--turquoise)]/40 hover:shadow-[0_20px_60px_-20px_rgba(68,127,152,0.5)]"
                 >
@@ -1049,7 +1058,7 @@ function WhyMe() {
                     <span className="absolute inset-0 translate-x-full bg-gradient-to-r from-transparent via-[color:var(--turquoise)] to-transparent transition-transform duration-500 group-hover:-translate-x-full" />
                   </span>
                   <motion.div
-                    whileHover={{ scale: 1.15, rotate: -8 }}
+                    whileHover={canHover ? { scale: 1.15, rotate: -8 } : undefined}
                     transition={SPRING_LIFT}
                     className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-[color:var(--turquoise)]/30 to-[color:var(--slate-blue)]/15 text-[color:var(--ice)]"
                   >
@@ -1204,6 +1213,7 @@ function ProjectsPanel() {
   const projects =
     filter === "All" ? allProjects : allProjects.filter((p) => p.category === filter);
   const reduced = usePrefersReducedMotion();
+  const canHover = useCanHover();
   const [open, setOpen] = useState<Project | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -1346,7 +1356,7 @@ function ProjectsPanel() {
         <motion.div
           key={filter}
           initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0, transition: { duration: DURATION.base, ease: EASE_SMOOTH } }}
+          animate={{ opacity: 1, y: 0, transition: { duration: DURATION.tab, ease: EASE_SMOOTH } }}
           exit={{ opacity: 0, y: -10, transition: { duration: 0.3, ease: EASE_EXIT } }}
         >
           {projects.length === 0 ? (
@@ -1365,7 +1375,7 @@ function ProjectsPanel() {
                 <TiltCard key={p.slug} maxTilt={p.placeholder ? 0 : 7} className="h-full">
                   <motion.button
                     variants={reduced ? undefined : STAGGER.item}
-                    whileHover={{ y: -6 }}
+                    whileHover={canHover ? { y: -6 } : undefined}
                     whileTap={p.placeholder ? undefined : TAP_SCALE}
                     transition={SPRING_LIFT}
                     onClick={(e) => !p.placeholder && openModal(p, e.currentTarget)}
@@ -1841,6 +1851,7 @@ function Experience() {
 function TechStackPanel() {
   const { techStack } = useTechStack();
   const reduced = usePrefersReducedMotion();
+  const canHover = useCanHover();
   const [filter, setFilter] = useState<string>("All");
   const categories = Array.from(new Set(techStack.map((s) => s.category)));
   const filters = ["All", ...categories];
@@ -1892,17 +1903,21 @@ function TechStackPanel() {
                 variants={reduced ? undefined : STAGGER.item}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3, ease: EASE_EXIT }}
-                whileHover={{
-                  y: -5,
-                  scale: 1.035,
-                  borderColor: `${v.color}99`,
-                  boxShadow: `0 18px 40px -20px ${v.color}80`,
-                  transition: SPRING_LIFT,
-                }}
+                whileHover={
+                  canHover
+                    ? {
+                        y: -5,
+                        scale: 1.035,
+                        borderColor: `${v.color}99`,
+                        boxShadow: `0 18px 40px -20px ${v.color}80`,
+                        transition: SPRING_LIFT,
+                      }
+                    : undefined
+                }
                 className="card-surface p-5 flex flex-col items-center gap-3 text-center"
               >
                 <motion.div
-                  whileHover={{ scale: 1.15, rotate: [0, -6, 6, 0] }}
+                  whileHover={canHover ? { scale: 1.15, rotate: [0, -6, 6, 0] } : undefined}
                   transition={{
                     scale: SPRING_LIFT,
                     rotate: { duration: DURATION.micro, ease: EASE_SMOOTH_INOUT },
@@ -1936,6 +1951,7 @@ function CertificatesPanel() {
   const { certificates } = useCertificates();
   const [lightbox, setLightbox] = useState<{ title: string; image: string } | null>(null);
   const reduced = usePrefersReducedMotion();
+  const canHover = useCanHover();
 
   useEffect(() => {
     if (!lightbox) return;
@@ -1963,7 +1979,11 @@ function CertificatesPanel() {
           <TiltCard key={c.id} maxTilt={6} className="h-full">
             <motion.div
               variants={reduced ? undefined : STAGGER.item}
-              whileHover={{ y: -5, boxShadow: "0 22px 48px -22px rgba(68,127,152,0.5)" }}
+              whileHover={
+                canHover
+                  ? { y: -5, boxShadow: "0 22px 48px -22px rgba(68,127,152,0.5)" }
+                  : undefined
+              }
               transition={SPRING_LIFT}
               className="group card-surface h-full overflow-hidden hover:border-[color:var(--turquoise)]/40"
             >
@@ -1989,7 +2009,7 @@ function CertificatesPanel() {
               <div className="p-6">
                 <div className="flex items-center gap-2">
                   <motion.span
-                    whileHover={{ rotate: 12, scale: 1.1 }}
+                    whileHover={canHover ? { rotate: 12, scale: 1.1 } : undefined}
                     transition={SPRING_LIFT}
                     className="grid h-8 w-8 place-items-center rounded-md bg-[color:var(--turquoise)]/15 text-[color:var(--turquoise)]"
                   >
@@ -2200,6 +2220,7 @@ function CommentList({ comments }: { comments: Comment[] }) {
 
 function Contact() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const canHover = useCanHover();
   const { settings } = useSiteSettings();
   const { comments, addComment } = useComments();
 
@@ -2446,7 +2467,7 @@ function Contact() {
                 </motion.button>
               </MagneticButton>
               {status === "error" && (
-                <p className="text-sm text-center text-red-400">
+                <p className="text-sm text-center text-[color:var(--destructive)]">
                   Something went wrong — please try again, or email me directly at{" "}
                   <a href={`mailto:${settings.email}`} className="underline">
                     {settings.email}
@@ -2468,11 +2489,11 @@ function Contact() {
             <Reveal key={s.l} delay={i * 0.08}>
               <TiltCard maxTilt={5} className="h-full">
                 <motion.div
-                  whileHover={{
-                    y: -4,
-                    scale: 1.02,
-                    boxShadow: "0 20px 44px -22px rgba(68,127,152,0.5)",
-                  }}
+                  whileHover={
+                    canHover
+                      ? { y: -4, scale: 1.02, boxShadow: "0 20px 44px -22px rgba(68,127,152,0.5)" }
+                      : undefined
+                  }
                   transition={SPRING_LIFT}
                   className="card-surface p-6 text-center"
                 >

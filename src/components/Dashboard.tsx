@@ -84,7 +84,7 @@ function Topbar({ onMenuClick, onLogout }: { onMenuClick: () => void; onLogout: 
         <button
           type="button"
           onClick={onMenuClick}
-          className="grid h-9 w-9 place-items-center rounded-lg text-[color:var(--platinum)] transition hover:bg-white/5 lg:hidden"
+          className="grid h-11 w-11 place-items-center rounded-lg text-[color:var(--platinum)] transition hover:bg-white/5 lg:hidden"
           aria-label="Open menu"
         >
           <Menu size={19} />
@@ -164,7 +164,7 @@ function AdminPanel() {
                     type="button"
                     onClick={() => setMobileOpen(false)}
                     aria-label="Close menu"
-                    className="grid h-8 w-8 place-items-center rounded-full text-[color:var(--platinum)] hover:bg-white/5"
+                    className="grid h-11 w-11 place-items-center rounded-full text-[color:var(--platinum)] hover:bg-white/5"
                   >
                     <X size={16} />
                   </button>
@@ -182,7 +182,7 @@ function AdminPanel() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: DURATION.base, ease: EASE_SMOOTH }}
+              transition={{ duration: DURATION.tab, ease: EASE_SMOOTH }}
             >
               {section === "dashboard" && <DashboardHome onNavigate={navigate} />}
               {section === "projects" && <ProjectsManager />}
