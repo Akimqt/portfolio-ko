@@ -7,7 +7,13 @@ import {
   useSpring,
 } from "framer-motion";
 import { AlertTriangle, ImagePlus, Plus, Search, Star, Trash2, Upload, X } from "lucide-react";
-import { EASE_SMOOTH, TAP_SCALE, usePrefersReducedMotion } from "@/lib/motion-tokens";
+import {
+  EASE_SMOOTH,
+  EASE_EXIT,
+  DURATION,
+  TAP_SCALE,
+  usePrefersReducedMotion,
+} from "@/lib/motion-tokens";
 import { fileToDataUrl } from "@/lib/admin-store";
 import { TECH_ICON_LIBRARY } from "@/lib/tech-icons";
 
@@ -145,16 +151,25 @@ export function Modal({
       {open && (
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { duration: DURATION.base, ease: EASE_SMOOTH } }}
+          exit={{ opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
           onMouseDown={(e) => e.target === e.currentTarget && onClose()}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 10 }}
-            transition={{ duration: 0.25, ease: EASE_SMOOTH }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: 0,
+              transition: { duration: DURATION.base, ease: EASE_SMOOTH },
+            }}
+            exit={{
+              opacity: 0,
+              scale: 0.96,
+              y: 10,
+              transition: { duration: 0.3, ease: EASE_EXIT },
+            }}
             className="card-surface flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden !bg-[color:var(--background)]/95"
           >
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
@@ -239,16 +254,20 @@ export function ConfirmDialog({
       {open && (
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { duration: DURATION.base, ease: EASE_SMOOTH } }}
+          exit={{ opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
           onMouseDown={(e) => e.target === e.currentTarget && onCancel()}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.22, ease: EASE_SMOOTH }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: 0,
+              transition: { duration: DURATION.base, ease: EASE_SMOOTH },
+            }}
+            exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.3, ease: EASE_EXIT } }}
             className="card-surface w-full max-w-sm !bg-[color:var(--background)]/95 p-6 text-center"
           >
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[color:var(--destructive)]/15 text-[color:var(--destructive)]">

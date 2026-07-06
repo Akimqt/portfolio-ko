@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ExternalLink, Github, Code2, Layers, Sparkles } from "lucide-react";
 import { getAllProjects, getProjectBySlug } from "@/lib/projects";
+import { EASE_SMOOTH, DURATION } from "@/lib/motion-tokens";
 
 export const Route = createFileRoute("/projects/$slug")({
   loader: async ({ params }) => {
@@ -52,7 +53,7 @@ function ProjectDetailPage() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: DURATION.base, ease: EASE_SMOOTH }}
         >
           <Link
             to="/"
@@ -68,7 +69,7 @@ function ProjectDetailPage() {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05, ease: [0.21, 0.6, 0.35, 1] }}
+            transition={{ duration: 0.5, delay: 0.05, ease: EASE_SMOOTH }}
           >
             <span className="inline-block rounded-full bg-[color:var(--turquoise)]/15 px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-[color:var(--turquoise)]">
               {project.category}
@@ -165,7 +166,7 @@ function ProjectDetailPage() {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.12, ease: [0.21, 0.6, 0.35, 1] }}
+            transition={{ duration: 0.5, delay: 0.12, ease: EASE_SMOOTH }}
             className="space-y-6"
           >
             {project.image ? (

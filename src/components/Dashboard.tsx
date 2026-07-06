@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { useAdminAuth } from "@/lib/admin-store";
-import { EASE_SMOOTH } from "@/lib/motion-tokens";
+import { EASE_SMOOTH, EASE_EXIT, DURATION } from "@/lib/motion-tokens";
 import AdminLogin from "@/components/admin/AdminLogin";
 import DashboardHome from "@/components/admin/DashboardHome";
 import ProjectsManager from "@/components/admin/ProjectsManager";
@@ -145,16 +145,15 @@ function AdminPanel() {
             <>
               <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { duration: DURATION.base, ease: EASE_SMOOTH } }}
+                exit={{ opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
                 className="fixed inset-0 z-40 bg-black/60 lg:hidden"
                 onClick={() => setMobileOpen(false)}
               />
               <motion.aside
                 initial={{ x: -280 }}
-                animate={{ x: 0 }}
-                exit={{ x: -280 }}
-                transition={{ duration: 0.3, ease: EASE_SMOOTH }}
+                animate={{ x: 0, transition: { duration: DURATION.base, ease: EASE_SMOOTH } }}
+                exit={{ x: -280, transition: { duration: 0.3, ease: EASE_EXIT } }}
                 className="fixed inset-y-0 left-0 z-50 w-64 border-r border-white/10 bg-[color:var(--background)] lg:hidden"
               >
                 <div className="flex items-center justify-between border-b border-white/10 p-4">
@@ -183,7 +182,7 @@ function AdminPanel() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: EASE_SMOOTH }}
+              transition={{ duration: DURATION.base, ease: EASE_SMOOTH }}
             >
               {section === "dashboard" && <DashboardHome onNavigate={navigate} />}
               {section === "projects" && <ProjectsManager />}

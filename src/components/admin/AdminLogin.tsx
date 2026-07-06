@@ -5,7 +5,7 @@ import { Eye, EyeOff, Lock, Loader2, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminAuth } from "@/lib/admin-store";
 import { fieldInputClass, fieldLabelClass } from "@/components/admin/ui";
-import { TAP_SCALE } from "@/lib/motion-tokens";
+import { EASE_SMOOTH, TAP_SCALE } from "@/lib/motion-tokens";
 
 export default function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
   const { login } = useAdminAuth();
@@ -38,7 +38,7 @@ export default function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.5, ease: EASE_SMOOTH }}
         className="card-surface relative w-full max-w-md p-8 sm:p-10"
       >
         <div className="flex flex-col items-center text-center">

@@ -4,7 +4,7 @@ import { useProjects } from "@/lib/projects";
 import { useTechStack } from "@/lib/tech-stack";
 import { useCertificates } from "@/lib/certificates";
 import { useComments, formatRelativeTime } from "@/lib/comments";
-import { EASE_SMOOTH } from "@/lib/motion-tokens";
+import { EASE_SMOOTH, SPRING_LIFT } from "@/lib/motion-tokens";
 import type { AdminSection } from "@/components/admin/types";
 
 export default function DashboardHome({
@@ -117,7 +117,7 @@ export default function DashboardHome({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.15 + i * 0.05, ease: EASE_SMOOTH }}
-            whileHover={{ y: -3 }}
+            whileHover={{ y: -3, transition: SPRING_LIFT }}
             className="card-surface flex flex-col p-6 text-left transition hover:border-[color:var(--turquoise)]/40"
           >
             <a.icon size={20} className="text-[color:var(--turquoise)]" />
@@ -150,7 +150,10 @@ export default function DashboardHome({
         ) : (
           <div className="mt-5 space-y-4">
             {comments.slice(0, 5).map((c) => (
-              <div key={c.id} className="flex items-start gap-3 border-b border-white/5 pb-4 last:border-0 last:pb-0">
+              <div
+                key={c.id}
+                className="flex items-start gap-3 border-b border-white/5 pb-4 last:border-0 last:pb-0"
+              >
                 <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color:var(--turquoise)]/15 text-[color:var(--turquoise)]">
                   <MessageSquare size={15} />
                 </div>

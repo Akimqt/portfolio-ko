@@ -49,29 +49,16 @@ import { useExperience } from "@/lib/experience";
 import { getExperienceIcon } from "@/lib/experience-icons";
 import { useComments, formatRelativeTime, type Comment } from "@/lib/comments";
 import { useSiteSettings } from "@/lib/settings";
-
-/* ---------- Accessibility: reduced-motion hook ---------- */
-
-/**
- * Returns true when the user has requested reduced motion via their OS/browser
- * settings (prefers-reduced-motion: reduce). Used site-wide to skip or simplify
- * animations without requiring any per-callsite opt-in.
- */
-function usePrefersReducedMotion(): boolean {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  });
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  return prefersReducedMotion;
-}
+import {
+  EASE_SMOOTH,
+  EASE_SMOOTH_INOUT,
+  EASE_EXIT,
+  SPRING_LIFT,
+  TAP_SCALE,
+  DURATION,
+  STAGGER,
+  usePrefersReducedMotion,
+} from "@/lib/motion-tokens";
 
 /* ---------- Dynamic stats: program start date ---------- */
 
@@ -90,26 +77,20 @@ function yearsStudying(): number {
 /* ---------- Shared ---------- */
 
 /**
- * Site-wide motion tokens. Every hand-rolled transition on the page draws
- * from this small set instead of improvising its own duration/curve, so
- * hover, reveal, and exit motion all share one "rhythm" no matter which
- * section you're in.
+ * Site-wide motion tokens now live in `src/lib/motion-tokens.ts` and are
+ * imported above, so hover, reveal, and exit motion share one "rhythm" across
+ * both the public site and the admin panel — not just within this file.
  *
  * EASE_SMOOTH: the signature exponential ease-out — fast start, long soft
  * settle. Used for anything entering the screen.
- * EASE_CRISP: a shorter ease-out for exits/quick state flips — exits read
- * best at roughly 60-70% of the matching enter duration.
+ * EASE_SMOOTH_INOUT: symmetric curve for two-way motion (toggles, tab
+ * switches, looping oscillations) that isn't a one-way reveal.
+ * EASE_EXIT: a quicker ease for exits — exits can read a touch faster than
+ * entrances without feeling rushed.
  * SPRING_LIFT: the physical spring behind hover/press feedback on cards and
  * icons — slightly under-damped so it has a touch of life without ever
  * overshooting into cartoon territory.
- * SPRING_SNAPPY: a stiffer spring for small, precise UI (tab pills, nav
- * indicator) that needs to feel immediate rather than floaty.
  */
-const EASE_SMOOTH = [0.16, 1, 0.3, 1] as const;
-const EASE_CRISP = [0.4, 0, 0.2, 1] as const;
-const SPRING_LIFT = { type: "spring", stiffness: 340, damping: 24, mass: 0.7 } as const;
-const SPRING_SNAPPY = { type: "spring", stiffness: 420, damping: 32, mass: 0.5 } as const;
-const TAP_SCALE = { scale: 0.96 };
 
 const NAV = [
   { id: "home", label: "Home" },
@@ -592,7 +573,7 @@ function CyclingWord({ words, className = "" }: { words: string[]; className?: s
           initial={{ clipPath: "inset(100% 0 0 0)", opacity: 0 }}
           animate={{ clipPath: "inset(0% 0 0 0)", opacity: 1 }}
           exit={{ clipPath: "inset(0 0 100% 0)", opacity: 0 }}
-          transition={{ duration: 0.6, ease: [0.65, 0, 0.35, 1] }}
+          transition={{ duration: 0.6, ease: EASE_SMOOTH_INOUT }}
           className={`col-start-1 row-start-1 inline-block ${className}`}
         >
           {words[index]}
@@ -758,7 +739,9 @@ function Hero() {
               key={s.l}
               initial={reduced ? false : { opacity: 0, y: 14, scale: 0.92 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              whileHover={reduced ? undefined : { y: -3, borderColor: "#447f98" }}
+              whileHover={
+                reduced ? undefined : { y: -3, borderColor: "#447f98", transition: SPRING_LIFT }
+              }
               transition={reduced ? {} : { delay: 1.5 + i * 0.1, duration: 0.5, ease: EASE_SMOOTH }}
               className="card-surface px-5 py-3"
             >
@@ -922,7 +905,12 @@ function About() {
                     transition={{
                       opacity: { delay: 0.4 + i * 0.15, duration: 0.5 },
                       scale: { delay: 0.4 + i * 0.15, duration: 0.5 },
-                      y: { delay: 1 + i * 0.3, duration: 4, repeat: Infinity, ease: "easeInOut" },
+                      y: {
+                        delay: 1 + i * 0.3,
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: EASE_SMOOTH_INOUT,
+                      },
                     }}
                     className={`absolute ${positions[i]} card-surface px-3 py-1.5 text-xs font-medium text-[color:var(--platinum)] hidden md:block`}
                   >
@@ -980,7 +968,7 @@ function About() {
                 >
                   <motion.div
                     whileHover={{ scale: 1.12, rotate: -4 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    transition={SPRING_LIFT}
                     className="grid h-10 w-10 place-items-center rounded-lg bg-[color:var(--turquoise)]/15 text-[color:var(--turquoise)]"
                   >
                     {v.i}
@@ -1062,7 +1050,7 @@ function WhyMe() {
                   </span>
                   <motion.div
                     whileHover={{ scale: 1.15, rotate: -8 }}
-                    transition={{ type: "spring", stiffness: 280, damping: 14 }}
+                    transition={SPRING_LIFT}
                     className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-[color:var(--turquoise)]/30 to-[color:var(--slate-blue)]/15 text-[color:var(--ice)]"
                   >
                     {it.i}
@@ -1191,7 +1179,7 @@ function PortfolioShowcase() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25, ease: EASE_SMOOTH }}
+              transition={{ duration: DURATION.micro, ease: EASE_SMOOTH_INOUT }}
             >
               {tab === "projects" && <ProjectsPanel />}
               {tab === "certificates" && <CertificatesPanel />}
@@ -1230,13 +1218,13 @@ function ProjectsPanel() {
       : {
           initial: { opacity: 0, y: 14 },
           animate: { opacity: 1, y: 0 },
-          transition: { delay, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
+          transition: { delay, duration: 0.55, ease: EASE_SMOOTH },
         };
 
   // Shared, slower "smooth" easing for the card → modal image morph. Using a
   // fixed-duration tween (rather than a spring) keeps both ends of the
   // layoutId transition perfectly in sync and easy to reason about the pace of.
-  const MORPH_TRANSITION = { duration: 0.65, ease: [0.22, 1, 0.36, 1] as const };
+  const MORPH_TRANSITION = { duration: 0.65, ease: EASE_SMOOTH };
 
   const openModal = (project: Project, trigger: HTMLButtonElement) => {
     triggerRef.current = trigger;
@@ -1358,90 +1346,94 @@ function ProjectsPanel() {
         <motion.div
           key={filter}
           initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2, ease: EASE_SMOOTH }}
+          animate={{ opacity: 1, y: 0, transition: { duration: DURATION.base, ease: EASE_SMOOTH } }}
+          exit={{ opacity: 0, y: -10, transition: { duration: 0.3, ease: EASE_EXIT } }}
         >
           {projects.length === 0 ? (
             <p className="py-12 text-center text-sm text-[color:var(--slate-blue)]/70">
               No {filter.toLowerCase()} projects yet — check back soon.
             </p>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {projects.map((p, i) => (
-                <Reveal key={p.slug} delay={i * 0.05}>
-                  <TiltCard maxTilt={p.placeholder ? 0 : 7} className="h-full">
-                    <motion.button
-                      whileHover={{ y: -6 }}
-                      whileTap={p.placeholder ? undefined : TAP_SCALE}
-                      transition={SPRING_LIFT}
-                      onClick={(e) => !p.placeholder && openModal(p, e.currentTarget)}
-                      className={`group relative flex h-full w-full flex-col text-left card-surface overflow-hidden transition ${
-                        p.placeholder
-                          ? "border-dashed border-[color:var(--slate-blue)]/30"
-                          : "hover:border-[color:var(--turquoise)]/50 hover:shadow-[0_20px_60px_-20px_rgba(68,127,152,0.5)]"
-                      }`}
-                    >
-                      {p.image ? (
-                        <div className="p-3 pb-0">
-                          <motion.div
-                            layoutId={reduced ? undefined : `project-media-${p.slug}`}
-                            transition={MORPH_TRANSITION}
-                            style={{ opacity: open?.slug === p.slug ? 0 : 1 }}
-                            className="relative aspect-[16/9] overflow-hidden rounded-lg bg-[color:var(--surface-2)] ring-1 ring-white/10"
-                          >
-                            <img
-                              src={p.image}
-                              alt={p.title}
-                              width={640}
-                              height={360}
-                              loading="lazy"
-                              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                            />
-                            {/* Hover overlay CTA — slides up from the bottom */}
-                            <div className="absolute inset-0 flex translate-y-full items-center justify-center bg-[color:var(--background)]/55 [backdrop-filter:blur(10px)_saturate(160%)] transition-transform duration-300 group-hover:translate-y-0">
-                              <span className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--ice)]">
-                                View Details <ArrowRight size={14} />
-                              </span>
-                            </div>
-                          </motion.div>
-                        </div>
-                      ) : (
-                        <div className="p-3 pb-0">
-                          <div className="grid aspect-[16/9] place-items-center rounded-lg bg-[color:var(--surface-2)]/40 ring-1 ring-white/10">
-                            <Sparkles size={24} className="text-[color:var(--slate-blue)]/50" />
-                          </div>
-                        </div>
-                      )}
-                      <div className="flex flex-1 flex-col p-4">
-                        <span className="inline-block w-fit rounded-full bg-[color:var(--turquoise)]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[color:var(--turquoise)]">
-                          {p.category}
-                        </span>
-                        <h3 className="mt-2 text-sm font-semibold text-[color:var(--ice)]">
-                          {p.title}
-                        </h3>
-                        <p className="mt-1 text-xs text-[color:var(--platinum)]/75 line-clamp-2">
-                          {p.short}
-                        </p>
-
-                        <div className="mt-3 flex-1" />
-
-                        <span
-                          className={`inline-flex w-fit items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition ${
-                            p.placeholder
-                              ? "bg-white/5 text-[color:var(--slate-blue)]/75"
-                              : "bg-[color:var(--surface-2)] text-[color:var(--ice)] group-hover:bg-[color:var(--turquoise)] group-hover:text-[color:var(--background)]"
-                          }`}
+            <motion.div
+              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+              variants={reduced ? undefined : STAGGER.container()}
+              initial={reduced ? undefined : "hidden"}
+              whileInView={reduced ? undefined : "visible"}
+              viewport={reduced ? undefined : { once: true, margin: "-80px" }}
+            >
+              {projects.map((p) => (
+                <TiltCard key={p.slug} maxTilt={p.placeholder ? 0 : 7} className="h-full">
+                  <motion.button
+                    variants={reduced ? undefined : STAGGER.item}
+                    whileHover={{ y: -6 }}
+                    whileTap={p.placeholder ? undefined : TAP_SCALE}
+                    transition={SPRING_LIFT}
+                    onClick={(e) => !p.placeholder && openModal(p, e.currentTarget)}
+                    className={`group relative flex h-full w-full flex-col text-left card-surface overflow-hidden transition ${
+                      p.placeholder
+                        ? "border-dashed border-[color:var(--slate-blue)]/30"
+                        : "hover:border-[color:var(--turquoise)]/50 hover:shadow-[0_20px_60px_-20px_rgba(68,127,152,0.5)]"
+                    }`}
+                  >
+                    {p.image ? (
+                      <div className="p-3 pb-0">
+                        <motion.div
+                          layoutId={reduced ? undefined : `project-media-${p.slug}`}
+                          transition={MORPH_TRANSITION}
+                          style={{ opacity: open?.slug === p.slug ? 0 : 1 }}
+                          className="relative aspect-[16/9] overflow-hidden rounded-lg bg-[color:var(--surface-2)] ring-1 ring-white/10"
                         >
-                          Details
-                          <ArrowRight size={11} className="transition group-hover:translate-x-1" />
-                        </span>
+                          <img
+                            src={p.image}
+                            alt={p.title}
+                            width={640}
+                            height={360}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                          />
+                          {/* Hover overlay CTA — slides up from the bottom */}
+                          <div className="absolute inset-0 flex translate-y-full items-center justify-center bg-[color:var(--background)]/55 [backdrop-filter:blur(10px)_saturate(160%)] transition-transform duration-300 group-hover:translate-y-0">
+                            <span className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--ice)]">
+                              View Details <ArrowRight size={14} />
+                            </span>
+                          </div>
+                        </motion.div>
                       </div>
-                    </motion.button>
-                  </TiltCard>
-                </Reveal>
+                    ) : (
+                      <div className="p-3 pb-0">
+                        <div className="grid aspect-[16/9] place-items-center rounded-lg bg-[color:var(--surface-2)]/40 ring-1 ring-white/10">
+                          <Sparkles size={24} className="text-[color:var(--slate-blue)]/50" />
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex flex-1 flex-col p-4">
+                      <span className="inline-block w-fit rounded-full bg-[color:var(--turquoise)]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[color:var(--turquoise)]">
+                        {p.category}
+                      </span>
+                      <h3 className="mt-2 text-sm font-semibold text-[color:var(--ice)]">
+                        {p.title}
+                      </h3>
+                      <p className="mt-1 text-xs text-[color:var(--platinum)]/75 line-clamp-2">
+                        {p.short}
+                      </p>
+
+                      <div className="mt-3 flex-1" />
+
+                      <span
+                        className={`inline-flex w-fit items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition ${
+                          p.placeholder
+                            ? "bg-white/5 text-[color:var(--slate-blue)]/75"
+                            : "bg-[color:var(--surface-2)] text-[color:var(--ice)] group-hover:bg-[color:var(--turquoise)] group-hover:text-[color:var(--background)]"
+                        }`}
+                      >
+                        Details
+                        <ArrowRight size={11} className="transition group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </motion.button>
+                </TiltCard>
               ))}
-            </div>
+            </motion.div>
           )}
         </motion.div>
       </AnimatePresence>
@@ -1450,17 +1442,25 @@ function ProjectsPanel() {
         {open && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
+            animate={{ opacity: 1, transition: { duration: DURATION.base, ease: EASE_SMOOTH } }}
+            exit={{ opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
             onClick={closeModal}
             className="fixed inset-0 z-50 grid place-items-center bg-black/60 [backdrop-filter:blur(16px)_saturate(140%)] p-4"
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0, y: 16 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.97, opacity: 0, y: 10 }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.55, ease: EASE_SMOOTH },
+              }}
+              exit={{
+                scale: 0.97,
+                opacity: 0,
+                y: 10,
+                transition: { duration: 0.3, ease: EASE_EXIT },
+              }}
               ref={modalRef}
               onClick={(e) => e.stopPropagation()}
               className="card-surface w-full max-w-4xl max-h-[80vh] overflow-y-auto"
@@ -1482,7 +1482,7 @@ function ProjectsPanel() {
                           initial={reduced ? undefined : { opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={reduced ? undefined : { opacity: 0 }}
-                          transition={{ duration: 0.4, ease: "easeInOut" }}
+                          transition={{ duration: DURATION.base, ease: EASE_SMOOTH }}
                           className="h-full w-full object-cover"
                         />
                       )}
@@ -1683,9 +1683,12 @@ function ProjectsPanel() {
             <motion.img
               key={activeImage}
               initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.2 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                transition: { duration: DURATION.base, ease: EASE_SMOOTH },
+              }}
+              exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.3, ease: EASE_EXIT } }}
               src={gallery[activeImage]}
               alt={open?.title}
               onClick={(e) => e.stopPropagation()}
@@ -1746,6 +1749,7 @@ function Experience() {
   const lineScale = useSpring(scrollYProgress, { stiffness: 80, damping: 20 });
   const { experience } = useExperience();
   const timeline = [...experience].sort((a, b) => a.order - b.order);
+  const reduced = usePrefersReducedMotion();
 
   return (
     <section
@@ -1766,14 +1770,20 @@ function Experience() {
             className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 -translate-x-1/2 bg-gradient-to-b from-[color:var(--turquoise)] via-[color:var(--glacier)] to-[color:var(--turquoise)]"
           />
 
-          <div className="space-y-12">
+          <motion.div
+            className="space-y-12"
+            variants={reduced ? undefined : STAGGER.container(0.1)}
+            initial={reduced ? undefined : "hidden"}
+            whileInView={reduced ? undefined : "visible"}
+            viewport={reduced ? undefined : { once: true, margin: "-80px" }}
+          >
             {timeline.map((it, i) => {
               // "Present" / ongoing items get a pulsing ring to draw the eye —
               // the rest get a plain static node.
               const isOngoing = it.tag.toLowerCase().includes("present") || it.placeholder;
               const Icon = getExperienceIcon(it.iconKey).icon;
               return (
-                <Reveal key={it.id} delay={0.05}>
+                <motion.div key={it.id} variants={reduced ? undefined : STAGGER.item}>
                   <div
                     className={`relative grid md:grid-cols-2 gap-6 items-center ${i % 2 === 1 ? "md:[direction:rtl]" : ""}`}
                   >
@@ -1810,7 +1820,7 @@ function Experience() {
                       <Icon size={18} />
                     </motion.div>
                   </div>
-                </Reveal>
+                </motion.div>
               );
             })}
 
@@ -1819,7 +1829,7 @@ function Experience() {
                 No experience entries yet — add some from the admin panel.
               </p>
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -1830,6 +1840,7 @@ function Experience() {
 
 function TechStackPanel() {
   const { techStack } = useTechStack();
+  const reduced = usePrefersReducedMotion();
   const [filter, setFilter] = useState<string>("All");
   const categories = Array.from(new Set(techStack.map((s) => s.category)));
   const filters = ["All", ...categories];
@@ -1865,19 +1876,22 @@ function TechStackPanel() {
 
       <motion.div
         layout
+        variants={reduced ? undefined : STAGGER.container()}
+        initial={reduced ? undefined : "hidden"}
+        whileInView={reduced ? undefined : "visible"}
+        viewport={reduced ? undefined : { once: true, margin: "-80px" }}
         className="mt-10 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
       >
         <AnimatePresence mode="popLayout">
-          {visible.map((v, i) => {
+          {visible.map((v) => {
             const Icon = getTechIcon(v.iconKey).icon;
             return (
               <motion.div
                 key={v.id}
                 layout
-                initial={{ opacity: 0, scale: 0.85, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+                variants={reduced ? undefined : STAGGER.item}
                 exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, delay: i * 0.02, ease: EASE_SMOOTH }}
+                transition={{ duration: 0.3, ease: EASE_EXIT }}
                 whileHover={{
                   y: -5,
                   scale: 1.035,
@@ -1889,7 +1903,10 @@ function TechStackPanel() {
               >
                 <motion.div
                   whileHover={{ scale: 1.15, rotate: [0, -6, 6, 0] }}
-                  transition={{ duration: 0.4 }}
+                  transition={{
+                    scale: SPRING_LIFT,
+                    rotate: { duration: DURATION.micro, ease: EASE_SMOOTH_INOUT },
+                  }}
                   className="grid h-12 w-12 place-items-center rounded-xl text-2xl"
                   style={{
                     backgroundColor: `${v.color}26`, // ~15% opacity tint of the brand color
@@ -1918,6 +1935,7 @@ function TechStackPanel() {
 function CertificatesPanel() {
   const { certificates } = useCertificates();
   const [lightbox, setLightbox] = useState<{ title: string; image: string } | null>(null);
+  const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
     if (!lightbox) return;
@@ -1934,73 +1952,81 @@ function CertificatesPanel() {
 
   return (
     <div>
-      <div className="grid gap-6 md:grid-cols-3">
-        {certificates.map((c, i) => (
-          <Reveal key={c.id} delay={i * 0.08}>
-            <TiltCard maxTilt={6} className="h-full">
-              <motion.div
-                whileHover={{ y: -5, boxShadow: "0 22px 48px -22px rgba(68,127,152,0.5)" }}
-                transition={SPRING_LIFT}
-                className="group card-surface h-full overflow-hidden hover:border-[color:var(--turquoise)]/40"
-              >
-                {c.image ? (
-                  <button
-                    type="button"
-                    onClick={() => setLightbox({ title: c.title, image: c.image! })}
-                    className="relative block w-full aspect-[4/3] overflow-hidden bg-[color:var(--surface-2)]"
-                    aria-label={`View full certificate: ${c.title}`}
-                  >
-                    <img
-                      src={c.image}
-                      alt={c.title}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                    />
-                    {/* Diagonal shine sweeping across the certificate on hover — a
+      <motion.div
+        className="grid gap-6 md:grid-cols-3"
+        variants={reduced ? undefined : STAGGER.container()}
+        initial={reduced ? undefined : "hidden"}
+        whileInView={reduced ? undefined : "visible"}
+        viewport={reduced ? undefined : { once: true, margin: "-80px" }}
+      >
+        {certificates.map((c) => (
+          <TiltCard key={c.id} maxTilt={6} className="h-full">
+            <motion.div
+              variants={reduced ? undefined : STAGGER.item}
+              whileHover={{ y: -5, boxShadow: "0 22px 48px -22px rgba(68,127,152,0.5)" }}
+              transition={SPRING_LIFT}
+              className="group card-surface h-full overflow-hidden hover:border-[color:var(--turquoise)]/40"
+            >
+              {c.image ? (
+                <button
+                  type="button"
+                  onClick={() => setLightbox({ title: c.title, image: c.image! })}
+                  className="relative block w-full aspect-[4/3] overflow-hidden bg-[color:var(--surface-2)]"
+                  aria-label={`View full certificate: ${c.title}`}
+                >
+                  <img
+                    src={c.image}
+                    alt={c.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                  />
+                  {/* Diagonal shine sweeping across the certificate on hover — a
                         small "glass reflection" cue that reads as premium rather
                         than another generic zoom-and-lift. */}
-                    <span className="pointer-events-none absolute inset-0 -translate-x-full skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
-                  </button>
-                ) : null}
-                <div className="p-6">
-                  <div className="flex items-center gap-2">
-                    <motion.span
-                      whileHover={{ rotate: 12, scale: 1.1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 14 }}
-                      className="grid h-8 w-8 place-items-center rounded-md bg-[color:var(--turquoise)]/15 text-[color:var(--turquoise)]"
-                    >
-                      <Award size={16} />
-                    </motion.span>
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-[color:var(--slate-blue)]">
-                      Webinar
-                    </span>
-                  </div>
-                  <h3 className="mt-4 text-base font-semibold leading-snug text-[color:var(--ice)]">
-                    {c.title}
-                  </h3>
-                  <p className="mt-3 text-xs text-[color:var(--slate-blue)]">{c.platform}</p>
-                  <p className="text-xs text-[color:var(--slate-blue)]/70">{c.date}</p>
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
+                </button>
+              ) : null}
+              <div className="p-6">
+                <div className="flex items-center gap-2">
+                  <motion.span
+                    whileHover={{ rotate: 12, scale: 1.1 }}
+                    transition={SPRING_LIFT}
+                    className="grid h-8 w-8 place-items-center rounded-md bg-[color:var(--turquoise)]/15 text-[color:var(--turquoise)]"
+                  >
+                    <Award size={16} />
+                  </motion.span>
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-[color:var(--slate-blue)]">
+                    Webinar
+                  </span>
                 </div>
-              </motion.div>
-            </TiltCard>
-          </Reveal>
+                <h3 className="mt-4 text-base font-semibold leading-snug text-[color:var(--ice)]">
+                  {c.title}
+                </h3>
+                <p className="mt-3 text-xs text-[color:var(--slate-blue)]">{c.platform}</p>
+                <p className="text-xs text-[color:var(--slate-blue)]/70">{c.date}</p>
+              </div>
+            </motion.div>
+          </TiltCard>
         ))}
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {lightbox && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: DURATION.base, ease: EASE_SMOOTH } }}
+            exit={{ opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
             onClick={() => setLightbox(null)}
             className="fixed inset-0 z-50 grid place-items-center bg-black/70 [backdrop-filter:blur(18px)_saturate(140%)] p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+                transition: { duration: DURATION.base, ease: EASE_SMOOTH },
+              }}
+              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
               onClick={(e) => e.stopPropagation()}
               className="relative max-w-3xl w-full"
             >
@@ -2591,7 +2617,7 @@ function BackToTop() {
               <motion.span
                 animate={reduced ? undefined : { y: [0, -3, 0] }}
                 transition={
-                  reduced ? undefined : { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
+                  reduced ? undefined : { duration: 1.4, repeat: Infinity, ease: EASE_SMOOTH_INOUT }
                 }
               >
                 <ArrowUp size={18} />
@@ -2699,7 +2725,7 @@ function WelcomeIntro({ onFinish }: { onFinish: () => void }) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.6, ease: "easeInOut" } }}
+      exit={{ opacity: 0, transition: { duration: 0.6, ease: EASE_EXIT } }}
       transition={{ duration: 0.4 }}
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-[color:var(--background)] px-6"
     >
@@ -2745,7 +2771,12 @@ function WelcomeIntro({ onFinish }: { onFinish: () => void }) {
           animate={{ strokeDashoffset: 0, opacity: [0, 1, 1, 0] }}
           transition={{
             strokeDashoffset: { duration: 0.85, ease: EASE_SMOOTH, delay: 0.15 },
-            opacity: { duration: 1.15, delay: 0.15, times: [0, 0.3, 0.7, 1], ease: "easeInOut" },
+            opacity: {
+              duration: 1.15,
+              delay: 0.15,
+              times: [0, 0.3, 0.7, 1],
+              ease: EASE_SMOOTH_INOUT,
+            },
           }}
         >
           {"<karl.dev/>"}
@@ -2839,7 +2870,7 @@ function WelcomeIntro({ onFinish }: { onFinish: () => void }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            whileHover={{ opacity: 1 }}
+            whileHover={{ opacity: 1, transition: SPRING_LIFT }}
             whileTap={TAP_SCALE}
             onClick={finish}
             className="absolute bottom-6 right-6 flex items-center gap-1.5 rounded-full border border-white/10 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-[color:var(--slate-blue)]/80 transition-colors hover:text-[color:var(--ice)]"
