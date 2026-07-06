@@ -34,7 +34,6 @@ import {
   FolderGit2,
   BadgeCheck,
   Layers,
-  Loader2,
   Code2,
   Pin,
 } from "lucide-react";
@@ -2613,25 +2612,22 @@ function BackToTop() {
  */
 const INTRO_SESSION_KEY = "portfolio-intro-seen";
 
-/** Length of the scripted sequence before it auto-finishes. */
-const INTRO_DURATION_MS = 5000;
+/** Length of the scripted sequence before it auto-finishes. Tightened from
+ * the original 5s so the splash reads as a quick, confident boot moment
+ * rather than a loading screen. */
+const INTRO_DURATION_MS = 3000;
 
 /** Safety net in case the primary timer is ever missed (e.g. a throttled
  * background tab) — guarantees the visitor is never stuck on the splash. */
 const INTRO_FALLBACK_MS = INTRO_DURATION_MS + 2000;
 
-const INTRO_LIVE_STATUS = [
-  { icon: <Cpu size={13} />, label: "Embedded" },
-  { icon: <Code2 size={13} />, label: "Full-Stack" },
-  { icon: <Github size={13} />, label: "Open Source" },
-];
-
 /**
  * Full-screen, once-per-session splash that plays before the real page
  * content mounts. Pure SVG/CSS/framer-motion — no video/image assets.
- * Mirrors the site's own visual language: card-surface glass panels, the
- * turquoise/slate-blue/ice palette, mono micro-labels, and the "<karl.dev/>"
- * brand mark from the navbar.
+ * Choreography: the navbar's "<karl.dev/>" mark line-draws itself first,
+ * then a restrained two-line headline rises into view, then a single quiet
+ * tagline settles in — one confident beat at a time instead of a dashboard
+ * of simultaneous status chips.
  */
 function WelcomeIntro({ onFinish }: { onFinish: () => void }) {
   const reduced = usePrefersReducedMotion();
@@ -2707,171 +2703,148 @@ function WelcomeIntro({ onFinish }: { onFinish: () => void }) {
       transition={{ duration: 0.4 }}
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-[color:var(--background)] px-6"
     >
-      {/* Ambient background — same texture language as the Hero section */}
-      <div className="pointer-events-none absolute inset-0 starfield opacity-60" />
-      <div className="pointer-events-none absolute inset-0 circuit-trace opacity-50" />
-      <div className="pointer-events-none absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full bg-[color:var(--turquoise)]/20 blur-3xl animate-float-blob" />
+      {/* Ambient background — same texture language as the Hero section,
+          dialed down so it recedes behind the monogram instead of competing
+          with it. */}
+      <div className="pointer-events-none absolute inset-0 starfield opacity-30" />
+      <div className="pointer-events-none absolute inset-0 circuit-trace opacity-25" />
+      <div className="pointer-events-none absolute -top-24 -left-24 h-[380px] w-[380px] rounded-full bg-[color:var(--turquoise)]/10 blur-3xl animate-float-blob" />
       <div
-        className="pointer-events-none absolute bottom-0 -right-24 h-[420px] w-[420px] rounded-full bg-[color:var(--slate-blue)]/15 blur-3xl animate-float-blob"
+        className="pointer-events-none absolute bottom-0 -right-24 h-[380px] w-[380px] rounded-full bg-[color:var(--slate-blue)]/8 blur-3xl animate-float-blob"
         style={{ animationDelay: "-6s" }}
       />
 
-      {/* Status badges */}
-      <div className="relative flex flex-wrap items-center justify-center gap-2.5">
-        <motion.span
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.5, ease: EASE_SMOOTH }}
-          className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-green-400"
-        >
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-availability rounded-full bg-green-400" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
-          </span>
-          System Ready
-        </motion.span>
-        <motion.span
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5, ease: EASE_SMOOTH }}
-          className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-[color:var(--slate-blue)]"
-        >
-          Portfolio — 2026
-        </motion.span>
-        <motion.span
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5, ease: EASE_SMOOTH }}
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-[color:var(--slate-blue)]"
-        >
-          <Loader2 size={11} className="animate-spin" />
-          UI Loading
-        </motion.span>
-      </div>
-
-      {/* Headline */}
-      <div className="relative mt-8 text-center">
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45, duration: 0.6, ease: EASE_SMOOTH }}
-          className="text-3xl font-medium text-[color:var(--platinum)] sm:text-4xl"
-        >
-          Welcome to
-        </motion.p>
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.6, ease: EASE_SMOOTH }}
-          className="gradient-text text-5xl font-bold leading-tight sm:text-6xl"
-        >
-          Karl's Portfolio
-        </motion.p>
-      </div>
-
-      {/* Console card: pulsing center badge, orbiting icons, stat tiles */}
-      <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.94 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ delay: 0.85, duration: 0.6, ease: EASE_SMOOTH }}
-        className="card-surface relative mt-10 w-full max-w-sm px-6 pt-8 pb-6"
+      {/* Monogram — the single lead element. An outline of the navbar's own
+          "<karl.dev/>" mark line-draws itself first (stroke-dasharray
+          reveal), then the mark's real brand coloring crossfades in on top
+          of the completed line-art. */}
+      <svg
+        viewBox="0 0 380 90"
+        className="h-14 w-auto sm:h-16"
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
       >
-        <div className="relative mx-auto grid h-24 w-24 place-items-center">
-          <span className="absolute inset-0 rounded-full border border-[color:var(--turquoise)] animate-ping-slow" />
-          <span className="absolute inset-2 rounded-full border border-[color:var(--turquoise)]/20" />
-          <div className="absolute inset-0 animate-orbit">
-            <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 grid h-6 w-6 place-items-center rounded-full border border-[color:var(--slate-blue)]/40 bg-[color:var(--background)] text-[color:var(--slate-blue)] animate-orbit-counter">
-              <Cpu size={12} />
-            </span>
-            <span className="absolute top-1/2 -right-1.5 -translate-y-1/2 grid h-6 w-6 place-items-center rounded-full border border-[color:var(--slate-blue)]/40 bg-[color:var(--background)] text-[color:var(--slate-blue)] animate-orbit-counter">
-              <Code2 size={12} />
-            </span>
-            <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 grid h-6 w-6 place-items-center rounded-full border border-[color:var(--slate-blue)]/40 bg-[color:var(--background)] text-[color:var(--slate-blue)] animate-orbit-counter">
-              <Github size={12} />
-            </span>
-          </div>
-          <div className="relative grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-[color:var(--turquoise)]/30 to-[color:var(--slate-blue)]/15">
-            <span className="font-mono text-[11px] text-[color:var(--ice)]">
-              <span className="text-[color:var(--slate-blue)]">&lt;</span>
-              KD
-              <span className="text-[color:var(--slate-blue)]">/&gt;</span>
-            </span>
-          </div>
-        </div>
+        <motion.text
+          x="190"
+          y="60"
+          textAnchor="middle"
+          fontFamily="var(--font-mono)"
+          fontSize="46"
+          fontWeight="600"
+          fill="none"
+          stroke="var(--ice)"
+          strokeWidth="1"
+          strokeLinejoin="round"
+          style={{ letterSpacing: "0.5px" }}
+          // Dasharray is an empirically-tuned value comfortably larger than
+          // this exact string's rendered outline length at this font-size —
+          // SVG text has no getTotalLength(), so a generous fixed number is
+          // the standard approach for a text stroke-draw effect.
+          strokeDasharray="1400"
+          initial={{ strokeDashoffset: 1400, opacity: 0 }}
+          animate={{ strokeDashoffset: 0, opacity: [0, 1, 1, 0] }}
+          transition={{
+            strokeDashoffset: { duration: 0.85, ease: EASE_SMOOTH, delay: 0.15 },
+            opacity: { duration: 1.15, delay: 0.15, times: [0, 0.3, 0.7, 1], ease: "easeInOut" },
+          }}
+        >
+          {"<karl.dev/>"}
+        </motion.text>
+        <motion.text
+          x="190"
+          y="60"
+          textAnchor="middle"
+          fontFamily="var(--font-mono)"
+          fontSize="46"
+          fontWeight="600"
+          style={{ letterSpacing: "0.5px" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.55, ease: EASE_SMOOTH, delay: 0.75 }}
+        >
+          <tspan fill="var(--slate-blue)">&lt;</tspan>
+          <tspan fill="var(--platinum)">karl</tspan>
+          <tspan fill="var(--turquoise)">.</tspan>
+          <tspan fill="var(--platinum)">dev</tspan>
+          <tspan fill="var(--slate-blue)">/&gt;</tspan>
+        </motion.text>
+      </svg>
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1, duration: 0.5, ease: EASE_SMOOTH }}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-center"
+      {/* Two-line headline — blur-to-focus plus an upward mask reveal per
+          line (each line clipped by its own overflow-hidden band so the
+          type rises into view, rather than a simple fade-up). */}
+      <div className="relative mt-7 text-center">
+        <div className="overflow-hidden">
+          <motion.p
+            initial={{ y: "70%", opacity: 0, filter: "blur(8px)" }}
+            animate={{ y: "0%", opacity: 1, filter: "blur(0px)" }}
+            transition={{ duration: 0.6, ease: EASE_SMOOTH, delay: 0.95 }}
+            className="text-3xl font-medium text-[color:var(--platinum)] sm:text-4xl"
           >
-            <div className="text-sm font-bold gradient-text">07</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-[color:var(--slate-blue)]">
-              Modules Loaded
-            </div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.25, duration: 0.5, ease: EASE_SMOOTH }}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-center"
-          >
-            <div className="text-sm font-bold gradient-text">100%</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-[color:var(--slate-blue)]">
-              Uptime Stable
-            </div>
-          </motion.div>
+            Welcome to
+          </motion.p>
         </div>
-      </motion.div>
-
-      {/* Live status chips */}
-      <div className="relative mt-8 flex flex-wrap items-center justify-center gap-2">
-        {INTRO_LIVE_STATUS.map((chip, i) => (
-          <motion.span
-            key={chip.label}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.5 + i * 0.12, duration: 0.4, ease: EASE_SMOOTH }}
-            className="card-surface flex items-center gap-1.5 px-3 py-1.5 text-xs text-[color:var(--platinum)]"
+        <div className="overflow-hidden">
+          <motion.p
+            initial={{ y: "70%", opacity: 0, filter: "blur(8px)" }}
+            animate={{ y: "0%", opacity: 1, filter: "blur(0px)" }}
+            transition={{ duration: 0.7, ease: EASE_SMOOTH, delay: 1.1 }}
+            className="gradient-text pb-1 text-5xl font-bold leading-tight sm:text-6xl"
           >
-            <span className="text-[color:var(--turquoise)]">{chip.icon}</span>
-            {chip.label}
-          </motion.span>
-        ))}
+            Karl's Portfolio
+          </motion.p>
+        </div>
       </div>
 
-      {/* Light-wipe flash that sweeps through near the end of the sequence */}
-      <motion.div
-        initial={{ opacity: 0, x: "-100%" }}
-        animate={{ opacity: [0, 0.55, 0], x: ["-100%", "0%", "100%"] }}
-        transition={{ delay: 3.6, duration: 0.7, ease: "easeInOut" }}
-        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-[color:var(--ice)] to-transparent mix-blend-screen"
-      />
+      {/* Single minimal tagline — replaces the old three-chip footer with
+          one restrained line. */}
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: EASE_SMOOTH, delay: 1.65 }}
+        className="relative mt-6 font-mono text-[11px] uppercase tracking-[0.35em] text-[color:var(--slate-blue)]/70"
+      >
+        Full-Stack Developer
+      </motion.p>
 
-      {/* Progress bar — fills over the exact scripted duration */}
-      <div className="absolute inset-x-0 bottom-0 h-1 bg-white/5">
+      {/* Progress rule — one eased sweep across the full scripted duration,
+          plus a soft traveling highlight, rather than a literal
+          loading-bar fill. */}
+      <div className="absolute inset-x-0 bottom-0 h-px overflow-hidden bg-white/5">
         <motion.div
-          initial={{ width: "0%" }}
-          animate={{ width: "100%" }}
-          transition={{ duration: INTRO_DURATION_MS / 1000, ease: "linear" }}
-          className="h-full bg-gradient-to-r from-[color:var(--turquoise)] via-[color:var(--glacier)] to-[color:var(--turquoise)]"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: INTRO_DURATION_MS / 1000, ease: EASE_SMOOTH }}
+          style={{ transformOrigin: "left" }}
+          className="h-full w-full bg-gradient-to-r from-[color:var(--turquoise)]/40 via-[color:var(--ice)] to-[color:var(--turquoise)]/70"
+        />
+        <motion.div
+          initial={{ x: "-30%" }}
+          animate={{ x: "130%" }}
+          transition={{
+            duration: (INTRO_DURATION_MS / 1000) * 0.85,
+            ease: EASE_SMOOTH,
+            delay: (INTRO_DURATION_MS / 1000) * 0.1,
+          }}
+          className="absolute inset-y-0 w-16 bg-gradient-to-r from-transparent via-[color:var(--ice)] to-transparent"
         />
       </div>
 
-      {/* Skip button — fades in after ~1s */}
+      {/* Skip button — fades in after ~1s, restyled minimal to match the
+          rest of the composition (quiet mono text instead of a filled
+          pill). */}
       <AnimatePresence>
         {showSkip && (
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            whileHover={{ scale: 1.05, borderColor: "rgba(68,127,152,0.6)" }}
+            whileHover={{ opacity: 1 }}
             whileTap={TAP_SCALE}
             onClick={finish}
-            className="absolute bottom-6 right-6 flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-[color:var(--slate-blue)] transition-colors hover:text-[color:var(--ice)]"
+            className="absolute bottom-6 right-6 flex items-center gap-1.5 rounded-full border border-white/10 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-[color:var(--slate-blue)]/80 transition-colors hover:text-[color:var(--ice)]"
           >
-            Skip Intro <ArrowRight size={12} />
+            Skip <ArrowRight size={11} />
           </motion.button>
         )}
       </AnimatePresence>
