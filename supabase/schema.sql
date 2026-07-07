@@ -55,7 +55,8 @@ create table if not exists tech_stack (
   "category" text not null,
   "iconKey" text not null,
   "color" text not null,
-  "createdAt" timestamptz not null default now()
+  "createdAt" timestamptz not null default now(),
+  constraint tech_stack_name_unique unique ("name")
 );
 
 alter table tech_stack enable row level security;
@@ -78,7 +79,8 @@ create table if not exists certificates (
   "date" text not null,
   "image" text,
   "credentialUrl" text,
-  "createdAt" timestamptz not null default now()
+  "createdAt" timestamptz not null default now(),
+  constraint certificates_title_unique unique ("title")
 );
 
 alter table certificates enable row level security;
@@ -103,7 +105,8 @@ create table if not exists experience (
   "body" text not null,
   "order" integer not null default 0,
   "placeholder" boolean not null default false,
-  "createdAt" timestamptz not null default now()
+  "createdAt" timestamptz not null default now(),
+  constraint experience_title_unique unique ("title")
 );
 
 alter table experience enable row level security;
@@ -299,15 +302,14 @@ values
   ('MQTT', 'Tools', 'mqtt', '#660066'),
   ('Git', 'Tools', 'git', '#F03C2E'),
   ('Proteus', 'Tools', 'proteus', '#1C79B3'),
-  ('EasyEDA', 'Tools', 'easyeda', '#1765F6')
-on conflict do nothing;
+on conflict ("name") do nothing;
 
 insert into certificates ("title", "platform", "date", "createdAt")
 values
   ('Master Agile Project Success — PRINCE2® Agile® Foundation & Practitioner Training', 'KOENIG Webinar (via Zoom)', 'Jan 2025', '2025-01-15T00:00:00.000Z'),
   ('VMware NSX — Network Virtualization & Security in Hybrid Clouds', 'KOENIG Webinar (via Zoom)', 'Jan 2025', '2025-01-15T00:00:00.000Z'),
   ('Python''s Role in AI-Driven Automation', 'KOENIG Webinar (via Zoom)', 'Jan 2025', '2025-01-15T00:00:00.000Z')
-on conflict do nothing;
+on conflict ("title") do nothing;
 
 insert into experience ("iconKey", "tag", "title", "sub", "body", "order", "placeholder")
 values
@@ -321,24 +323,15 @@ values
     false
   ),
   (
-    'users',
-    '2025 – Present',
-    'Technical Committee Head',
-    'Computer Engineering Student Society',
-    'Leads a 5-member Technical Committee, overseeing technical initiatives, events, and internal tools. Plans and organizes technical workshops, seminars, and competitions. Manages the organization''s technical infrastructure (website and social media) and coordinates the team to delegate tasks and ensure timely delivery.',
-    2,
-    false
-  ),
-  (
     'briefcase',
     '2027 onward',
     'Open to OJT / Internship Opportunities',
     'Full-Stack Development · Web & Mobile · IoT/Embedded',
     'Actively seeking on-the-job training and internship opportunities in full-stack development, with IoT and embedded systems as an added strength.',
-    3,
+    2,
     true
   )
-on conflict do nothing;
+on conflict ("title") do nothing;
 
 insert into site_settings ("id", "fullName", "role", "location", "availabilityText", "aboutParagraphs", "resumeUrl", "email", "phone", "social", "seo")
 values (
@@ -348,8 +341,7 @@ values (
   'Talisay, Tiaong, Quezon, Philippines',
   'Available for OJT / Internship — 2027',
   array[
-    'I''m a Computer Engineering student at Pamantasan ng Lungsod ng San Pablo (2024–2028), focused on full-stack software development — React, Next.js, TypeScript, Node.js, and Flutter across web and mobile. I also understand the hardware my code talks to, which makes me especially effective on IoT and embedded projects where the software has to work hand-in-hand with real sensors and circuits.',
-    'Currently leading the Technical Committee for the Computer Engineering Student Society, where I coordinate a 5-member team across technical events, infrastructure, and internal tools.'
+    'I''m a Computer Engineering student at Pamantasan ng Lungsod ng San Pablo (2024–2028), focused on full-stack software development — React, Next.js, TypeScript, Node.js, and Flutter across web and mobile. I also understand the hardware my code talks to, which makes me especially effective on IoT and embedded projects where the software has to work hand-in-hand with real sensors and circuits.'
   ],
   '/resume.pdf',
   'karlakimdinglasan@gmail.com',
