@@ -246,3 +246,51 @@ export function fileToDataUrl(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+/** Reject uploads above this size before we even try to read them — stored
+ *  inline in Postgres (see note above), an unbounded upload turns into an
+ *  unbounded row. 2MB is generous for a photo that's about to be downscaled
+ *  anyway. */
+export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+
+/** Downscale + re-encode an image file client-side before it's stored as a
+ *  data URL: draws it to a canvas capped at `maxDimension` on the long edge,
+ *  then exports as JPEG at `quality`. This is a stopgap, not a replacement
+ *  for real object storage (see the note above) — it just keeps someone
+ *  dropping in a 10MB phone photo from bloating a row today. Falls back to
+ *  the original file's data URL if canvas decoding fails for any reason
+ *  (e.g. an unusual format the browser's <img> can't decode), so an upload
+ *  never silently disappears. */
+export function downscaleImage(
+  file: File,
+  maxDimension = 1600,
+  quality = 0.8,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+        const width = Math.round(img.width * scale);
+        const height = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("canvas 2d context unavailable");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      } catch (err) {
+        reject(err);
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Couldn't decode image for downscaling"));
+    };
+    img.src = objectUrl;
+  }).catch(() => fileToDataUrl(file)) as Promise<string>;
+}

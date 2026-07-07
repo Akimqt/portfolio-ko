@@ -118,7 +118,19 @@ create policy "experience_admin_write" on experience for all
 
 -- ---------------------------------------------------------------------------
 -- comments — the one table where INSERT stays open to the public (anyone can
--- leave a comment); only pinning/deleting requires an authenticated admin.
+-- leave a comment); only pinning/deleting/approving requires an
+-- authenticated admin.
+--
+-- Moderation model: comments land with "approved" = false and are NOT
+-- publicly visible until an admin approves them from CommentsManager. This
+-- was a deliberate choice over "publish instantly" — a public, unauthenticated
+-- insert endpoint with no moderation queue is an open invitation for spam/
+-- abuse to appear on the live site the instant it's posted, with no window
+-- to catch it. The tradeoff: comments no longer show up immediately for
+-- their author, and there's now an extra admin step (Approve) before a
+-- comment goes live. If you'd rather keep the "instant guestbook" feel,
+-- default "approved" to true and drop the filter in "comments_public_read"
+-- instead — but pair that with tighter automated checks than what's here.
 -- ---------------------------------------------------------------------------
 create table if not exists comments (
   "id" uuid primary key default gen_random_uuid(),
@@ -126,16 +138,38 @@ create table if not exists comments (
   "email" text,
   "message" text not null,
   "pinned" boolean not null default false,
-  "createdAt" timestamptz not null default now()
+  "approved" boolean not null default false,
+  "createdAt" timestamptz not null default now(),
+  constraint comments_name_length check (
+    char_length(trim("name")) > 0 and char_length("name") <= 80
+  ),
+  constraint comments_message_length check (
+    char_length(trim("message")) > 0 and char_length("message") <= 1000
+  )
 );
+
+-- Backfill for existing rows created before the "approved" column existed —
+-- keep already-live comments visible instead of hiding them all on migrate.
+alter table comments add column if not exists "approved" boolean not null default false;
+update comments set "approved" = true where "approved" is false;
 
 alter table comments enable row level security;
 
+-- Public visitors only ever see approved comments; the admin panel (an
+-- authenticated session) needs to see everything, including the pending
+-- queue, so it can moderate it — hence the "or authenticated" branch.
 drop policy if exists "comments_public_read" on comments;
-create policy "comments_public_read" on comments for select using (true);
+create policy "comments_public_read" on comments for select
+  using ("approved" = true or auth.role() = 'authenticated');
 
 drop policy if exists "comments_public_insert" on comments;
-create policy "comments_public_insert" on comments for insert with check (true);
+create policy "comments_public_insert" on comments for insert
+  with check (
+    char_length(trim("name")) > 0 and char_length("name") <= 80
+    and char_length(trim("message")) > 0 and char_length("message") <= 1000
+    and "approved" = false
+    and "pinned" = false
+  );
 
 drop policy if exists "comments_admin_update" on comments;
 create policy "comments_admin_update" on comments for update

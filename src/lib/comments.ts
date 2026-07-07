@@ -6,10 +6,13 @@ export type Comment = {
   email?: string; // optional, never rendered publicly
   message: string;
   pinned: boolean;
+  approved: boolean;
   createdAt: string; // ISO timestamp
 };
 
 const TABLE = "comments";
+const MAX_NAME_LENGTH = 80;
+const MAX_MESSAGE_LENGTH = 1000;
 
 function sortComments(items: Comment[]): Comment[] {
   return [...items].sort((a, b) => {
@@ -29,12 +32,17 @@ export function useComments() {
   } = useSupabaseCollection<Comment>(TABLE, "id");
 
   // Visitor-facing: allowed by RLS for anyone, no admin session required.
+  // The RLS insert policy enforces the same length/non-empty checks and
+  // rejects "approved"/"pinned" set to true — this client-side trim/slice is
+  // just so people get a clean, expected value instead of a rejected insert
+  // from a stray trailing space or a paste that ran long.
   const addComment = (data: { name: string; email?: string; message: string }) =>
     insert({
-      name: data.name,
+      name: data.name.trim().slice(0, MAX_NAME_LENGTH),
       email: data.email || undefined,
-      message: data.message,
+      message: data.message.trim().slice(0, MAX_MESSAGE_LENGTH),
       pinned: false,
+      approved: false,
     });
 
   // Admin-only: RLS rejects these unless the request carries an authenticated
@@ -45,7 +53,26 @@ export function useComments() {
     return update(id, { pinned: !current.pinned } as Partial<Comment>);
   };
 
-  return { comments: sortComments(items), loading, refetch, addComment, togglePin, deleteComment };
+  // Admin-only: moves a comment out of the pending queue and onto the public
+  // site. There's no "un-approve" in the UI on purpose — Delete covers the
+  // "this shouldn't be visible" case once something's already live.
+  const approveComment = (id: string) => update(id, { approved: true } as Partial<Comment>);
+
+  // Visitors only ever get approved comments back (RLS-enforced); the admin
+  // panel session sees everything, pending included, so it can moderate.
+  const publicComments = sortComments(items.filter((c) => c.approved));
+  const pendingComments = sortComments(items.filter((c) => !c.approved));
+
+  return {
+    comments: publicComments,
+    pendingComments,
+    loading,
+    refetch,
+    addComment,
+    togglePin,
+    approveComment,
+    deleteComment,
+  };
 }
 
 /**

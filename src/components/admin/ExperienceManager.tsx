@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { GripVertical, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useExperience, type ExperienceItem } from "@/lib/experience";
 import {
@@ -153,9 +153,6 @@ export default function ExperienceManager() {
                 e.placeholder ? "border-dashed border-[color:var(--slate-blue)]/30" : ""
               }`}
             >
-              <span className="hidden shrink-0 text-[color:var(--slate-blue)]/50 sm:block">
-                <GripVertical size={16} />
-              </span>
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[color:var(--turquoise)]/10 text-[color:var(--turquoise)]">
                 <Icon size={18} />
               </div>

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, lazy, Suspense } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   motion,
@@ -40,7 +40,8 @@ import {
 import { SiFacebook } from "react-icons/si";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import portrait from "@/assets/portrait.png";
+import portrait1x from "@/assets/portrait-1x.webp";
+import portrait2x from "@/assets/portrait-2x.webp";
 import { useProjects, type Project } from "@/lib/projects";
 import { useTechStack, type TechStackItem } from "@/lib/tech-stack";
 import { getTechIcon } from "@/lib/tech-icons";
@@ -49,6 +50,12 @@ import { useExperience } from "@/lib/experience";
 import { getExperienceIcon } from "@/lib/experience-icons";
 import { useComments, formatRelativeTime, type Comment } from "@/lib/comments";
 import { useSiteSettings } from "@/lib/settings";
+
+// Lazy-loaded: neither lightbox is needed until a visitor actually opens the
+// project gallery or clicks a certificate, so their code doesn't need to sit
+// in the initial bundle.
+const ProjectImageLightbox = lazy(() => import("@/components/ProjectImageLightbox"));
+const CertificateLightbox = lazy(() => import("@/components/CertificateLightbox"));
 import {
   EASE_SMOOTH,
   EASE_SMOOTH_INOUT,
@@ -391,7 +398,9 @@ function Navbar() {
   const progressWidth = useSpring(scrollYProgress, { stiffness: 120, damping: 24 });
 
   useEffect(() => {
-    const onScroll = () => {
+    let ticking = false;
+
+    const updateActiveSection = () => {
       setScrolled(window.scrollY > 24);
       // Active section detection
       const offsets = NAV.map((n) => {
@@ -401,8 +410,23 @@ function Navbar() {
       });
       offsets.sort((a, b) => a.top - b.top);
       setActive(offsets[0].id);
+      ticking = false;
     };
-    onScroll();
+
+    // Every native scroll event fires this — without the rAF guard below,
+    // getBoundingClientRect() runs for every NAV item on every single one of
+    // them, synchronously, which causes layout thrashing during momentum
+    // scroll (especially on lower-end phones). The `ticking` flag collapses
+    // however many scroll events fire in a frame down to a single
+    // recalculation per animation frame — imperceptible at 60fps, and far
+    // cheaper than running on every event.
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateActiveSection);
+    };
+
+    updateActiveSection();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -875,9 +899,12 @@ function About() {
                 maxTilt={6}
                 className="relative overflow-hidden rounded-3xl border border-white/10"
               >
-                {/* Hero portrait is above the fold — load eagerly for best LCP */}
+                {/* Hero portrait is above the fold — load eagerly for best LCP.
+                    Served as compressed WebP (~11KB/~30KB vs. 1.5MB PNG) with a
+                    1x/2x srcSet since it renders in a fixed 384x512 box. */}
                 <img
-                  src={portrait}
+                  src={portrait1x}
+                  srcSet={`${portrait1x} 1x, ${portrait2x} 2x`}
                   alt={settings.fullName}
                   width={384}
                   height={512}
@@ -1650,103 +1677,18 @@ function ProjectsPanel() {
       </AnimatePresence>
 
       {/* Fullscreen image lightbox */}
-      <AnimatePresence>
-        {lightboxOpen && gallery[activeImage] && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeLightbox}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 [backdrop-filter:blur(20px)_saturate(140%)] p-4"
-          >
-            {/* Close button */}
-            <button
-              onClick={closeLightbox}
-              aria-label="Close fullscreen"
-              className="absolute top-4 right-4 grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/10 [backdrop-filter:blur(14px)_saturate(160%)] text-white hover:bg-white/20 transition z-10"
-            >
-              <X size={20} />
-            </button>
-
-            {/* Image counter */}
-            {gallery.length > 1 && (
-              <span className="absolute top-4 left-1/2 -translate-x-1/2 text-sm text-white/60 font-mono z-10">
-                {activeImage + 1} / {gallery.length}
-              </span>
-            )}
-
-            {/* Prev arrow */}
-            {gallery.length > 1 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  prevImage();
-                }}
-                aria-label="Previous image"
-                className="absolute left-4 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/10 [backdrop-filter:blur(14px)_saturate(160%)] text-white hover:bg-white/20 transition z-10"
-              >
-                <ArrowRight size={20} className="rotate-180" />
-              </button>
-            )}
-
-            {/* Main fullscreen image */}
-            <motion.img
-              key={activeImage}
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                transition: { duration: DURATION.base, ease: EASE_SMOOTH },
-              }}
-              exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.3, ease: EASE_EXIT } }}
-              src={gallery[activeImage]}
-              alt={open?.title}
-              onClick={(e) => e.stopPropagation()}
-              className="max-h-[82vh] max-w-[88vw] rounded-xl object-contain shadow-2xl"
-            />
-
-            {/* Next arrow */}
-            {gallery.length > 1 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  nextImage();
-                }}
-                aria-label="Next image"
-                className="absolute right-4 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/10 [backdrop-filter:blur(14px)_saturate(160%)] text-white hover:bg-white/20 transition z-10"
-              >
-                <ArrowRight size={20} />
-              </button>
-            )}
-
-            {/* Thumbnail strip at the bottom */}
-            {gallery.length > 1 && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10"
-              >
-                {gallery.map((src, idx) => (
-                  <button
-                    key={src + idx}
-                    onClick={() => setActiveImage(idx)}
-                    className={`h-14 w-20 overflow-hidden rounded-lg border-2 transition ${
-                      idx === activeImage
-                        ? "border-[color:var(--turquoise)]"
-                        : "border-white/20 hover:border-white/50 opacity-60 hover:opacity-100"
-                    }`}
-                  >
-                    <img
-                      src={src}
-                      alt={`${open?.title} screenshot ${idx + 1} of ${gallery.length}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Suspense fallback={null}>
+        <ProjectImageLightbox
+          gallery={gallery}
+          activeImage={activeImage}
+          setActiveImage={setActiveImage}
+          projectTitle={open?.title}
+          lightboxOpen={lightboxOpen}
+          onClose={closeLightbox}
+          prevImage={prevImage}
+          nextImage={nextImage}
+        />
+      </Suspense>
     </div>
   );
 }
@@ -1889,8 +1831,7 @@ function TechStackPanel() {
         layout
         variants={reduced ? undefined : STAGGER.container()}
         initial={reduced ? undefined : "hidden"}
-        whileInView={reduced ? undefined : "visible"}
-        viewport={reduced ? undefined : { once: true, margin: "-80px" }}
+        animate={reduced ? undefined : "visible"}
         className="mt-10 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
       >
         <AnimatePresence mode="popLayout">
@@ -1972,100 +1913,67 @@ function CertificatesPanel() {
         className="grid gap-6 md:grid-cols-3"
         variants={reduced ? undefined : STAGGER.container()}
         initial={reduced ? undefined : "hidden"}
-        whileInView={reduced ? undefined : "visible"}
-        viewport={reduced ? undefined : { once: true, margin: "-80px" }}
+        animate={reduced ? undefined : "visible"}
       >
         {certificates.map((c) => (
-          <TiltCard key={c.id} maxTilt={6} className="h-full">
-            <motion.div
-              variants={reduced ? undefined : STAGGER.item}
-              whileHover={
-                canHover
-                  ? { y: -5, boxShadow: "0 22px 48px -22px rgba(68,127,152,0.5)" }
-                  : undefined
-              }
-              transition={SPRING_LIFT}
-              className="group card-surface h-full overflow-hidden hover:border-[color:var(--turquoise)]/40"
-            >
-              {c.image ? (
-                <button
-                  type="button"
-                  onClick={() => setLightbox({ title: c.title, image: c.image! })}
-                  className="relative block w-full aspect-[4/3] overflow-hidden bg-[color:var(--surface-2)]"
-                  aria-label={`View full certificate: ${c.title}`}
-                >
-                  <img
-                    src={c.image}
-                    alt={c.title}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                  />
-                  {/* Diagonal shine sweeping across the certificate on hover — a
-                        small "glass reflection" cue that reads as premium rather
-                        than another generic zoom-and-lift. */}
-                  <span className="pointer-events-none absolute inset-0 -translate-x-full skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
-                </button>
-              ) : null}
-              <div className="p-6">
-                <div className="flex items-center gap-2">
-                  <motion.span
-                    whileHover={canHover ? { rotate: 12, scale: 1.1 } : undefined}
-                    transition={SPRING_LIFT}
-                    className="grid h-8 w-8 place-items-center rounded-md bg-[color:var(--turquoise)]/15 text-[color:var(--turquoise)]"
+          <motion.div key={c.id} variants={reduced ? undefined : STAGGER.item}>
+            <TiltCard maxTilt={6} className="h-full">
+              <motion.div
+                whileHover={
+                  canHover
+                    ? { y: -5, boxShadow: "0 22px 48px -22px rgba(68,127,152,0.5)" }
+                    : undefined
+                }
+                transition={SPRING_LIFT}
+                className="group card-surface h-full overflow-hidden hover:border-[color:var(--turquoise)]/40"
+              >
+                {c.image ? (
+                  <button
+                    type="button"
+                    onClick={() => setLightbox({ title: c.title, image: c.image! })}
+                    className="relative block w-full aspect-[4/3] overflow-hidden bg-[color:var(--surface-2)]"
+                    aria-label={`View full certificate: ${c.title}`}
                   >
-                    <Award size={16} />
-                  </motion.span>
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-[color:var(--slate-blue)]">
-                    Webinar
-                  </span>
+                    <img
+                      src={c.image}
+                      alt={c.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    />
+                    {/* Diagonal shine sweeping across the certificate on hover — a
+                          small "glass reflection" cue that reads as premium rather
+                          than another generic zoom-and-lift. */}
+                    <span className="pointer-events-none absolute inset-0 -translate-x-full skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
+                  </button>
+                ) : null}
+                <div className="p-6">
+                  <div className="flex items-center gap-2">
+                    <motion.span
+                      whileHover={canHover ? { rotate: 12, scale: 1.1 } : undefined}
+                      transition={SPRING_LIFT}
+                      className="grid h-8 w-8 place-items-center rounded-md bg-[color:var(--turquoise)]/15 text-[color:var(--turquoise)]"
+                    >
+                      <Award size={16} />
+                    </motion.span>
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-[color:var(--slate-blue)]">
+                      Webinar
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-base font-semibold leading-snug text-[color:var(--ice)]">
+                    {c.title}
+                  </h3>
+                  <p className="mt-3 text-xs text-[color:var(--slate-blue)]">{c.platform}</p>
+                  <p className="text-xs text-[color:var(--slate-blue)]/70">{c.date}</p>
                 </div>
-                <h3 className="mt-4 text-base font-semibold leading-snug text-[color:var(--ice)]">
-                  {c.title}
-                </h3>
-                <p className="mt-3 text-xs text-[color:var(--slate-blue)]">{c.platform}</p>
-                <p className="text-xs text-[color:var(--slate-blue)]/70">{c.date}</p>
-              </div>
-            </motion.div>
-          </TiltCard>
+              </motion.div>
+            </TiltCard>
+          </motion.div>
         ))}
       </motion.div>
 
-      <AnimatePresence>
-        {lightbox && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: { duration: DURATION.base, ease: EASE_SMOOTH } }}
-            exit={{ opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
-            onClick={() => setLightbox(null)}
-            className="fixed inset-0 z-50 grid place-items-center bg-black/70 [backdrop-filter:blur(18px)_saturate(140%)] p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{
-                scale: 1,
-                opacity: 1,
-                transition: { duration: DURATION.base, ease: EASE_SMOOTH },
-              }}
-              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.3, ease: EASE_EXIT } }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-3xl w-full"
-            >
-              <img
-                src={lightbox.image}
-                alt={lightbox.title}
-                className="w-full rounded-xl border border-white/10"
-              />
-              <button
-                onClick={() => setLightbox(null)}
-                aria-label="Close certificate preview"
-                className="absolute -top-3 -right-3 grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/10 [backdrop-filter:blur(14px)_saturate(160%)] text-[color:var(--ice)] hover:text-[color:var(--turquoise)] hover:bg-white/20 transition"
-              >
-                <X size={18} />
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Suspense fallback={null}>
+        <CertificateLightbox lightbox={lightbox} onClose={() => setLightbox(null)} />
+      </Suspense>
     </div>
   );
 }
@@ -2110,20 +2018,55 @@ const FORMSPREE_ENDPOINT = "https://formspree.io/f/mzdlelwz";
 
 /* ---------- Comments (public guestbook) ---------- */
 
+// Cooldown after a successful post, so one visitor can't fire off a burst of
+// submissions. Purely a client-side speed bump (state resets on refresh) —
+// the real backstop is the RLS insert policy + moderation queue in Supabase.
+const COMMENT_COOLDOWN_MS = 30_000;
+
 function CommentForm({ addComment }: { addComment: ReturnType<typeof useComments>["addComment"] }) {
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
+  // Honeypot: a field real visitors never see or fill in (hidden off-screen,
+  // not just visually collapsed, so screen readers skip it too). Bots that
+  // blindly fill every input on the page will trip it; we silently drop
+  // those submissions instead of telling the bot what tripped, which would
+  // just teach it to leave that one field alone.
+  const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
+  useEffect(() => {
+    if (!cooldownUntil) return;
+    const id = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
+      setCooldownRemaining(remaining);
+      if (remaining <= 0) clearInterval(id);
+    }, 250);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
+
+  const onCooldown = cooldownRemaining > 0;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!name.trim() || !message.trim()) return;
-    setSubmitting(true);
-    try {
-      await addComment({ name: name.trim(), message: message.trim() });
+    if (!name.trim() || !message.trim() || onCooldown) return;
+    if (honeypot) {
+      // Bot tripped the honeypot — pretend it worked so it doesn't retry.
       toast.success("Thanks for your comment!");
       setName("");
       setMessage("");
+      setHoneypot("");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await addComment({ name: name.trim(), message: message.trim() });
+      toast.success("Thanks! Your comment will show up once it's reviewed.");
+      setName("");
+      setMessage("");
+      setCooldownUntil(Date.now() + COMMENT_COOLDOWN_MS);
+      setCooldownRemaining(Math.ceil(COMMENT_COOLDOWN_MS / 1000));
     } catch {
       // useSupabaseCollection already toasted the specific error.
     } finally {
@@ -2145,6 +2088,7 @@ function CommentForm({ addComment }: { addComment: ReturnType<typeof useComments
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
+          maxLength={80}
           className="mt-1.5 w-full rounded-lg border border-white/10 bg-[color:var(--background)]/50 px-4 py-3 text-sm text-[color:var(--ice)] outline-none transition focus:border-[color:var(--turquoise)] focus:shadow-[0_0_0_3px_rgba(68,127,152,0.2)]"
         />
       </div>
@@ -2161,17 +2105,35 @@ function CommentForm({ addComment }: { addComment: ReturnType<typeof useComments
           onChange={(e) => setMessage(e.target.value)}
           rows={4}
           required
+          maxLength={1000}
           className="mt-1.5 w-full rounded-lg border border-white/10 bg-[color:var(--background)]/50 px-4 py-3 text-sm text-[color:var(--ice)] outline-none transition focus:border-[color:var(--turquoise)] focus:shadow-[0_0_0_3px_rgba(68,127,152,0.2)] resize-none"
+        />
+      </div>
+      {/* Honeypot — visually and semantically hidden from real users. */}
+      <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden">
+        <label htmlFor="comment-website">Website</label>
+        <input
+          id="comment-website"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
         />
       </div>
       <MagneticButton strength={0.15} className="block w-full">
         <motion.button
           type="submit"
-          disabled={submitting}
-          whileTap={submitting ? undefined : TAP_SCALE}
+          disabled={submitting || onCooldown}
+          whileTap={submitting || onCooldown ? undefined : TAP_SCALE}
           className="w-full rounded-full bg-[color:var(--turquoise)] px-6 py-3 text-sm font-medium text-[color:var(--background)] flex items-center justify-center gap-2 hover:shadow-[0_0_40px_-5px_rgba(68,127,152,0.9)] transition-shadow disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {submitting ? "Posting…" : "Post Comment"} <Send size={14} />
+          {submitting
+            ? "Posting…"
+            : onCooldown
+              ? `Wait ${cooldownRemaining}s…`
+              : "Post Comment"}{" "}
+          <Send size={14} />
         </motion.button>
       </MagneticButton>
     </form>
@@ -2908,30 +2870,11 @@ function WelcomeIntro({ onFinish }: { onFinish: () => void }) {
 
 export default function Portfolio() {
   const [introDone, setIntroDone] = useState(false);
-  const { settings } = useSiteSettings();
 
-  /**
-   * __root.tsx's `head()` runs outside React render (it powers SSR/first
-   * paint and social-preview crawlers), so it can't await this component's
-   * Supabase fetch. Its static meta values stay as-is on purpose — that's
-   * the fallback every crawler and first paint gets. Here we additionally
-   * patch `document.title` and the meta description tag client-side once
-   * settings have loaded, so an edited SEO title/description shows up for
-   * real visitors. Note this still doesn't help crawlers/link-unfurl bots,
-   * which don't run JS — that's a separate fix (move this into the route's
-   * server-side loader/head, now that settings live in Supabase and can be
-   * fetched there too).
-   */
-  useEffect(() => {
-    document.title = settings.seo.title;
-    let meta = document.querySelector('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "description");
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute("content", settings.seo.description);
-  }, [settings.seo.title, settings.seo.description]);
+  // SEO title/description/OG tags are now populated server-side by the
+  // route's head() (see routes/index.tsx → getSiteSettings()), so crawlers
+  // and social-preview unfurlers that don't run JS see admin-edited values
+  // too — no client-side document.title/meta patch needed here anymore.
 
   return (
     <div className="relative min-h-screen text-[color:var(--foreground)]">

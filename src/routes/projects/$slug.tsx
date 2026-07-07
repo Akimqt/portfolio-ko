@@ -18,6 +18,9 @@ export const Route = createFileRoute("/projects/$slug")({
           { name: "description", content: loaderData.project.short },
           { property: "og:title", content: `${loaderData.project.title} — Portfolio Project` },
           { property: "og:description", content: loaderData.project.short },
+          ...(loaderData.project.image
+            ? [{ property: "og:image", content: loaderData.project.image }]
+            : []),
         ]
       : [],
   }),

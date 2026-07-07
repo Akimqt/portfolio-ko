@@ -7,6 +7,7 @@ import {
   useSpring,
 } from "framer-motion";
 import { AlertTriangle, ImagePlus, Plus, Search, Star, Trash2, Upload, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   EASE_SMOOTH,
   EASE_EXIT,
@@ -14,7 +15,7 @@ import {
   TAP_SCALE,
   usePrefersReducedMotion,
 } from "@/lib/motion-tokens";
-import { fileToDataUrl } from "@/lib/admin-store";
+import { downscaleImage, MAX_UPLOAD_BYTES } from "@/lib/admin-store";
 import { TECH_ICON_LIBRARY } from "@/lib/tech-icons";
 
 /* Shared field styling — lifted verbatim from the contact form in
@@ -134,12 +135,48 @@ export function Modal({
   children: ReactNode;
   footer: ReactNode;
 }) {
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      // Focus trap: Tab/Shift+Tab cycles within the dialog instead of
+      // escaping into the page behind it — same logic as the project
+      // gallery lightbox in Portfolio.tsx.
+      if (e.key === "Tab" && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
     window.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    firstFocusable?.focus();
+
     return () => {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
@@ -160,6 +197,7 @@ export function Modal({
           aria-labelledby="admin-modal-title"
         >
           <motion.div
+            ref={modalRef}
             initial={{ opacity: 0, scale: 0.94, y: 16 }}
             animate={{
               opacity: 1,
@@ -461,9 +499,13 @@ export function ImageField({
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return;
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error(`Image is too large (${(file.size / 1024 / 1024).toFixed(1)}MB) — max 2MB.`);
+      return;
+    }
     setBusy(true);
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await downscaleImage(file);
       onChange(dataUrl);
     } finally {
       setBusy(false);
@@ -542,9 +584,20 @@ export function GalleryField({
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    const list = Array.from(files);
+    const oversized = list.filter((f) => f.size > MAX_UPLOAD_BYTES);
+    const accepted = list.filter((f) => f.size <= MAX_UPLOAD_BYTES);
+    if (oversized.length > 0) {
+      toast.error(
+        oversized.length === 1
+          ? `"${oversized[0].name}" is too large (${(oversized[0].size / 1024 / 1024).toFixed(1)}MB) — max 2MB.`
+          : `${oversized.length} files are too large — max 2MB each.`,
+      );
+    }
+    if (accepted.length === 0) return;
     setBusy(true);
     try {
-      const dataUrls = await Promise.all(Array.from(files).map(fileToDataUrl));
+      const dataUrls = await Promise.all(accepted.map((f) => downscaleImage(f)));
       onChange([...values, ...dataUrls]);
     } finally {
       setBusy(false);
