@@ -1042,9 +1042,9 @@ function WhyMe() {
     },
     {
       i: <Users size={22} />,
-      t: "Technical Committee Lead",
-      // Evidence: Computer Engineering Student Society (see Experience section).
-      d: "I lead the 5-member Technical Committee of the Computer Engineering Student Society: organizing workshops, managing the org's infrastructure, and making sure the team's deliverables actually ship.",
+      t: "Ships Real, Used Software",
+      // Evidence: GARA-HE (live coffee shop POS) and TrackBack (deployed PLSP campus tool).
+      d: "GARA-HE runs day-to-day POS operations for an actual coffee shop. TrackBack is a live lost-and-found tool for PLSP students. Not class projects sitting in a repo — software people actually open and use.",
     },
     {
       i: <Rocket size={22} />,
