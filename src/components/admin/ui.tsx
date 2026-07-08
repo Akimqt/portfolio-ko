@@ -6,7 +6,17 @@ import {
   useMotionTemplate,
   useSpring,
 } from "framer-motion";
-import { AlertTriangle, ImagePlus, Plus, Search, Star, Trash2, Upload, X } from "lucide-react";
+import {
+  AlertTriangle,
+  FileText,
+  ImagePlus,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   EASE_SMOOTH,
@@ -15,7 +25,12 @@ import {
   TAP_SCALE,
   usePrefersReducedMotion,
 } from "@/lib/motion-tokens";
-import { downscaleImage, MAX_UPLOAD_BYTES } from "@/lib/admin-store";
+import {
+  downscaleImage,
+  fileToDataUrl,
+  MAX_UPLOAD_BYTES,
+  MAX_RESUME_UPLOAD_BYTES,
+} from "@/lib/admin-store";
 import { TECH_ICON_LIBRARY } from "@/lib/tech-icons";
 
 /* Shared field styling — lifted verbatim from the contact form in
@@ -548,6 +563,89 @@ export function ImageField({
           className={`relative ${aspect} w-full max-w-[220px] overflow-hidden rounded-lg border border-white/10 bg-[color:var(--surface-2)]/60`}
         >
           <img src={value} alt="Preview" className="h-full w-full object-cover" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * ResumeField — paste a URL or upload a PDF (stored as a data URL), same
+ * pattern as ImageField above. Lets the resume shown on the public site be
+ * swapped from the admin panel without ever touching code or the public/
+ * folder — upload a new PDF here, hit Save, and both "Download Resume"
+ * buttons on the live site start serving it immediately.
+ * ------------------------------------------------------------------------- */
+export function ResumeField({
+  value,
+  onChange,
+}: {
+  value: string | undefined;
+  onChange: (next: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  const isUploadedFile = value?.startsWith("data:");
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Resume must be a PDF file.");
+      return;
+    }
+    if (file.size > MAX_RESUME_UPLOAD_BYTES) {
+      toast.error(
+        `PDF is too large (${(file.size / 1024 / 1024).toFixed(1)}MB) — max ${MAX_RESUME_UPLOAD_BYTES / 1024 / 1024}MB.`,
+      );
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      onChange(dataUrl);
+      toast.success("Resume uploaded — don't forget to Save Changes.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-1.5 space-y-2">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={isUploadedFile ? "" : (value ?? "")}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="/resume.pdf"
+          className={fieldInputClass + " mt-0"}
+        />
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+        <motion.button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          whileTap={TAP_SCALE}
+          disabled={busy}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-medium text-[color:var(--platinum)] transition hover:border-[color:var(--turquoise)]/50 hover:text-[color:var(--ice)] disabled:opacity-60"
+        >
+          <Upload size={14} />
+          {busy ? "Reading…" : "Upload"}
+        </motion.button>
+      </div>
+      <p className="text-xs text-[color:var(--slate-blue)]/70">
+        Paste a URL, or upload a PDF from your device — max {MAX_RESUME_UPLOAD_BYTES / 1024 / 1024}
+        MB. Leave as "/resume.pdf" to keep using the bundled file in public/.
+      </p>
+      {isUploadedFile && (
+        <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-[color:var(--surface-2)]/60 px-3 py-2 text-xs text-[color:var(--platinum)]">
+          <FileText size={14} className="shrink-0 text-[color:var(--turquoise)]" />
+          Custom resume uploaded and stored — this is what visitors will download.
         </div>
       )}
     </div>

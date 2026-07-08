@@ -253,6 +253,12 @@ export function fileToDataUrl(file: File): Promise<string> {
  *  anyway. */
 export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 
+/** Same idea as MAX_UPLOAD_BYTES, but sized for a resume PDF instead of a
+ *  photo — there's no downscale step for a PDF, so this caps the raw file
+ *  itself. 5MB is generous for a one-or-two-page text resume while still
+ *  keeping the stored data URL well within Postgres's comfort zone. */
+export const MAX_RESUME_UPLOAD_BYTES = 5 * 1024 * 1024;
+
 /** Downscale + re-encode an image file client-side before it's stored as a
  *  data URL: draws it to a canvas capped at `maxDimension` on the long edge,
  *  then exports as JPEG at `quality`. This is a stopgap, not a replacement

@@ -4,7 +4,7 @@ import { Github, Linkedin, Mail, Save } from "lucide-react";
 import { SiFacebook } from "react-icons/si";
 import { toast } from "sonner";
 import { useSiteSettings, type SiteSettings } from "@/lib/settings";
-import { Field, fieldInputClass, PrimaryButton } from "@/components/admin/ui";
+import { Field, fieldInputClass, PrimaryButton, ResumeField } from "@/components/admin/ui";
 import { EASE_SMOOTH } from "@/lib/motion-tokens";
 
 /* Flattened, form-friendly shape — `aboutParagraphs` is fixed to two entries
@@ -212,17 +212,8 @@ export default function SettingsManager() {
               className={fieldInputClass + " resize-none"}
             />
           </Field>
-          <Field
-            label="Resume / CV URL"
-            hint='Leave as "/resume.pdf" to keep using the bundled PDF in public/.'
-          >
-            <input
-              type="text"
-              value={form.resumeUrl}
-              onChange={(e) => set("resumeUrl", e.target.value)}
-              className={fieldInputClass}
-              placeholder="/resume.pdf"
-            />
+          <Field label="Resume / CV">
+            <ResumeField value={form.resumeUrl} onChange={(v) => set("resumeUrl", v)} />
           </Field>
         </SettingsCard>
 

@@ -77,6 +77,12 @@ import {
  */
 const PROGRAM_START_YEAR = 2024;
 
+/* Filename used for both "Download Resume" buttons' `download` attribute —
+   keeps the saved file named/extensioned correctly even when
+   settings.resumeUrl is an uploaded PDF stored as a data: URL, which
+   carries no filename of its own. */
+const RESUME_DOWNLOAD_FILENAME = "Karl-Akim-Dinglasan-Resume.pdf";
+
 /** Returns the number of full years since PROGRAM_START_YEAR. */
 function yearsStudying(): number {
   return new Date().getFullYear() - PROGRAM_START_YEAR;
@@ -733,14 +739,16 @@ function Hero() {
           </MagneticButton>
           {/*
             RESUME DOWNLOAD — "Let's Connect" style outlined button.
-            Drop your resume PDF into the public/ folder as "resume.pdf" and
-            this link will work automatically. If you host the PDF elsewhere,
-            update the href below to the full URL.
+            Sourced from settings.resumeUrl (Profile Settings admin page) —
+            either the bundled public/resume.pdf, a pasted URL, or a PDF
+            uploaded straight from the admin panel (stored as a data URL).
+            The explicit `download` filename below is what makes the file
+            save with a proper name + .pdf extension in the data-URL case.
           */}
           <MagneticButton strength={0.3}>
             <a
               href={settings.resumeUrl}
-              download
+              download={RESUME_DOWNLOAD_FILENAME}
               className="rounded-full border border-[color:var(--slate-blue)]/50 px-6 py-3 text-sm font-medium text-[color:var(--platinum)] transition hover:border-[color:var(--turquoise)] hover:text-[color:var(--ice)] flex items-center gap-2"
             >
               <Download size={15} /> Download Resume
@@ -2320,7 +2328,7 @@ function Contact() {
                 <MagneticButton strength={0.3}>
                   <a
                     href={settings.resumeUrl}
-                    download
+                    download={RESUME_DOWNLOAD_FILENAME}
                     className="flex items-center gap-2 rounded-full border border-[color:var(--slate-blue)]/50 px-4 py-2 text-sm font-medium text-[color:var(--platinum)] hover:border-[color:var(--turquoise)] hover:text-[color:var(--ice)] transition"
                   >
                     <Download size={14} /> Download Resume
